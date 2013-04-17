@@ -1,0 +1,6 @@
+[
+	{ "caption": "Open IPython Notebook", "command": "inb_prompt_list_notebooks" },
+	{ "caption": "Save IPython Notebook", "command": "inb_save_notebook" },
+    { "caption": "Restart IPython Notebook Kernel", "command": "inb_restart_kernel" },
+    { "caption": "Interrupt IPython Notebook Kernel", "command": "inb_interrupt_kernel" }
+]
