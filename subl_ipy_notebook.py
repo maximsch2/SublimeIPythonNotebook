@@ -111,6 +111,7 @@ class NotebookView(object):
     def __init__(self, view, notebook_id, notebook_name, baseurl):
         self.view = view
         self.baseurl = baseurl
+        self.name = notebook_name
         view.set_name("IPy Notebook - " + notebook_name)
         view.set_scratch(True)
         view.set_syntax_file("Packages/Python/Python.tmLanguage")
@@ -539,3 +540,16 @@ class InbMoveRightCommand(sublime_plugin.TextCommand):
         nbview = manager.get_nb_view(self.view)
         if not nbview or not nbview.move_right():
             self.view.run_command("move", {"by": "characters", "forward": True})
+
+
+class InbOpenAsIpynbCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        view = self.window.active_view()
+        nbview = manager.get_nb_view(view)
+        if nbview:
+            s = str(nbview.notebook)
+            new_view = self.window.new_file()
+            edit = new_view.begin_edit()
+            new_view.insert(edit, 0, s)
+            new_view.end_edit(edit)
+            new_view.set_name(nbview.name + ".ipynb")

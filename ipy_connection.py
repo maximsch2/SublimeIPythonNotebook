@@ -10,6 +10,7 @@ import urllib2
 from time import sleep
 import threading
 import Queue
+from collections import defaultdict
 
 import re
 
@@ -28,6 +29,9 @@ def get_notebooks(baseurl):
 
 
 def convert_mime_types(obj, content):
+    if not content:
+        return obj
+
     if "text/plain" in content:
         obj.text = content["text/plain"]
 
@@ -83,13 +87,11 @@ class Notebook(object):
 
 
 
-
 class Cell(object):
     def __init__(self, obj):
         self._cell = obj
         self.runnig = False
         self.cell_view = None
-
 
     def get_cell_type(self):
         return self._cell.cell_type
@@ -117,10 +119,9 @@ class Cell(object):
                 result.append(data)
         return "".join(result)
 
-
-
     def on_output(self, msg_type, content):
         output = None
+        content = defaultdict(lambda: None, content)  # an easy way to avoid checking all parameters
         if msg_type == "stream":
             output = nbformat.new_output(msg_type, content["data"], stream=content["name"])
         elif msg_type == "pyerr":
