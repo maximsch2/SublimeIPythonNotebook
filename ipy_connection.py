@@ -86,6 +86,8 @@ class Notebook(object):
         del self._cells[cell_index]
 
 
+MAX_OUTPUT_SIZE = 5000
+
 
 class Cell(object):
     def __init__(self, obj):
@@ -117,7 +119,12 @@ class Cell(object):
                 data = "\n".join(output.traceback)
                 data = re.sub("\x1b[^m]*m", "", data)  # remove escape characters
                 result.append(data)
-        return "".join(result)
+                if not data.endswith("\n"):
+                    result.append("\n")
+        result = "".join(result)
+        if len(result) > MAX_OUTPUT_SIZE:
+            result = result[:MAX_OUTPUT_SIZE] + "..."
+        return result
 
     def on_output(self, msg_type, content):
         output = None
@@ -150,9 +157,7 @@ class Cell(object):
             self.cell_view.update_output()
 
         kernel.run(self.code, output_callback=self.on_output,
-                       execute_reply_callback=self.on_execute_reply)
-
-
+                   execute_reply_callback=self.on_execute_reply)
 
 
 output_msg_types = set(["stream", "display_data", "pyout", "pyerr"])
@@ -175,7 +180,6 @@ class Kernel(object):
         thread.start_new_thread(self.process_messages, ())
         self.status_callback = None
 
-
     @property
     def kernel_id(self):
         id = self.get_kernel_id()
@@ -184,7 +188,6 @@ class Kernel(object):
             return self.get_kernel_id()
         return id
 
-
     def get_kernel_id(self):
         notebooks = get_notebooks(self.baseurl)
         for nb in notebooks:
@@ -192,18 +195,15 @@ class Kernel(object):
                 return nb["kernel_id"]
         raise Exception("notebook_id not found")
 
-
     def start_kernel(self):
         url = "http://" + self.baseurl + "/kernels?notebook=" + self.notebook_id
         req = urllib2.urlopen(url, data="")  # data="" makes it POST request
         req.read()
 
-
     def restart_kernel(self):
         url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/restart"
         req = urllib2.urlopen(url, data="")
         req.read()
-
 
     def interrupt_kernel(self):
         url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/interrupt"
@@ -230,7 +230,6 @@ class Kernel(object):
         self.iopub_messages.append(m)
         self.message_queue.put(m)
 
-
     def on_shell_msg(self, msg):
         m = json.loads(msg)
         self.shell_messages.append(m)
@@ -249,7 +248,6 @@ class Kernel(object):
             callbacks["set_next_input"] = set_next_input_callback
 
         self.message_callbacks[msg_id] = callbacks
-
 
     def process_messages(self):
         while True:
@@ -285,7 +283,6 @@ class Kernel(object):
 
             self.message_queue.task_done()
 
-
     def create_get_output_callback(self, callback):
         def grab_output(msg_type, content):
             if msg_type == "stream":
@@ -301,21 +298,19 @@ class Kernel(object):
 
         return grab_output
 
-
     def create_websockets(self):
         url = "ws://" + self.baseurl + "/kernels/" + self.kernel_id + "/"
         self.shell = websocket.WebSocketApp(url=url+"shell",
-                on_message=lambda ws, msg: self.on_shell_msg(msg),
-                on_open=lambda ws: ws.send(""))
+                                            on_message=lambda ws, msg: self.on_shell_msg(msg),
+                                            on_open=lambda ws: ws.send(""))
         self.iopub = websocket.WebSocketApp(url=url + "iopub",
-                on_message=lambda ws, msg: self.on_iopub_msg(msg),
-                on_open=lambda ws: ws.send(""))
+                                            on_message=lambda ws, msg: self.on_iopub_msg(msg),
+                                            on_open=lambda ws: ws.send(""))
 
         thread.start_new_thread(self.shell.run_forever, ())
         thread.start_new_thread(self.iopub.run_forever, ())
         sleep(2)
         self.running = True
-
 
     def create_message(self, msg_type, content):
         msg = dict(
@@ -328,12 +323,10 @@ class Kernel(object):
             parent_header={})
         return msg
 
-
     def send_shell(self, msg):
         if not self.running:
             self.create_websockets()
         self.shell.send(json.dumps(msg))
-
 
     def get_completitions(self, line, cursor_pos, text=""):
         if text == "":
@@ -354,7 +347,6 @@ class Kernel(object):
         del self.message_callbacks[msg_id]
         return matches
 
-
     def run(self, code, output_callback,
             clear_output_callback=None,
             execute_reply_callback=None,
@@ -371,5 +363,3 @@ class Kernel(object):
                                 execute_reply_callback,
                                 set_next_input_callback)
         self.send_shell(msg)
-
-

@@ -6,9 +6,6 @@
 import sublime
 import sublime_plugin
 import ipy_connection
-import threading
-
-global_lock = threading.Lock()
 
 
 def create_kernel(baseurl, notebook_id):
@@ -16,27 +13,121 @@ def create_kernel(baseurl, notebook_id):
 
 output_draw_style = sublime.HIDDEN
 input_draw_style = sublime.HIDDEN
+cell_draw_style = sublime.HIDDEN
 
 
-class CellView(object):
+class BaseCellView(object):
     def __init__(self, index, view, cell):
         self.index = index
         self.view = view
-        self.running = False
-        self.cell_lock = threading.Lock()
         self.cell = cell
         self.cell.cell_view = self
+        self.buffer_ready = False
 
-    def run(self, regions, kernel):
+    def get_cell_region(self):
+        reg = self.view.get_regions("inb_cells")[self.index]
+        return sublime.Region(reg.a+1, reg.b)
+
+    def run(self, kernel, region):
+        pass
+
+    def get_region(self, regname):
+        cell_reg = self.get_cell_region()
+        all_regs = self.view.get_regions(regname)
+        for reg in all_regs:
+            if cell_reg.contains(reg):
+                res = sublime.Region(reg.a+1, reg.b-1)
+                return res
+        return None
+
+    def get_input_region(self):
+        return self.get_region("inb_input")
+
+    def write_to_region(self, edit, regname, text):
+        if not text:
+            return
+        if text.endswith("\n"):
+            text = text[:-1]
+        region = self.get_region(regname)
+        self.view.set_read_only(False)
+        self.view.replace(edit, region, text)
+
+    def select(self, last_line=False):
+        input_region = self.get_input_region()
+        if input_region is None:
+            return
+
+        if last_line:
+            pos = self.view.line(input_region.b).a
+        else:
+            pos = input_region.a
+
+        self.view.sel().clear()
+        self.view.sel().add(sublime.Region(pos, pos))
+        self.view.show_at_center(pos)
+
+    def setup(self, edit):
+        self.buffer_ready = True
+
+    def draw(self, edit):
+        if not self.buffer_ready:
+            self.setup(edit)
+
+    def get_input_content(self):
+        input_region = self.get_input_region()
+        if input_region:
+            return self.view.substr(input_region)
+        else:
+            return ""
+
+
+class CodeCellView(BaseCellView):
+    def __init__(self, index, view, cell):
+        BaseCellView.__init__(self, index, view, cell)
+        self.running = False
+
+    def run(self, kernel):
         if self.running:
             print "Warning"
             print "Cell is already running"
             return
-        self.running = True
-        code = self.get_code(regions)
-        self.cell.code = code
 
+        self.running = True
+        code = self.get_code()
+        self.cell.code = code
         self.cell.run(kernel)
+
+    def setup(self, edit):
+        BaseCellView.setup(self, edit)
+        region = self.get_cell_region()
+        start = region.a
+
+        view = self.view
+        n = self.index
+
+        self.view.set_read_only(False)
+
+        start = start + view.insert(edit, start, "#Input[%d]" % n)
+        end = start + view.insert(edit, start, "\n\n")
+
+        reg = sublime.Region(start, end)
+        regs = view.get_regions("inb_input")
+        regs.append(reg)
+        view.add_regions("inb_input", regs, "string", "", input_draw_style)
+        self.view.set_read_only(False)
+
+        end = end + view.insert(edit, end, "#/Input\n\n\n#Output[%d]" % n)
+
+        start = end
+        end = start + view.insert(edit, start, "\n\n")
+
+        reg = sublime.Region(start, end)
+        regs = view.get_regions("inb_output")
+        regs.append(reg)
+        view.add_regions("inb_output", regs, "string", "", output_draw_style)
+        self.view.set_read_only(False)
+
+        end = end + view.insert(edit, end, "#/Output")
 
     def update_output(self):
         def run_command():
@@ -47,64 +138,18 @@ class CellView(object):
         self.running = False
 
     def output_result(self, edit):
-        with self.cell_lock:
-            self.do_output_result(edit, self.cell.output)
+        self.write_to_region(edit, "inb_output", self.cell.output)
 
-    def do_output_result(self, edit, result):
-        if not result or (len(result) == 0):
-            result = "\n"
+    def draw(self, edit):
+        BaseCellView.draw(self, edit)
+        self.write_to_region(edit, "inb_input", self.cell.code)
+        self.write_to_region(edit, "inb_output", self.cell.output)
 
-        if not result.endswith("\n"):
-            result += "\n"
+    def get_code(self):
+        return self.get_input_content()
 
-        with global_lock:
-            regs = self.view.get_regions("inb_output")
-            n = self.index
-            reg = regs[n]
-
-            self.view.set_read_only(False)
-            start = reg.a
-            end = start + len(result)
-            self.view.erase(edit, reg)
-            self.view.insert(edit, start, result)
-            regs = self.view.get_regions("inb_output")
-            regs[n] = sublime.Region(start, end)
-            self.view.add_regions("inb_output", regs, "string", "", output_draw_style)
-
-    def redraw(self, edit):
-        self.view.set_read_only(False)
-        regions = self.view.get_regions("inb_input")
-        reg = regions[self.index]
-        start = reg.a
-        code = self.cell.code
-        if len(code) == 0:
-            code = "\n"
-        elif (len(code) > 0) and not code.endswith("\n"):
-            code += "\n"
-        end = start + len(code) + 1
-        self.view.replace(edit, reg, "\n" + code)
-        regs = self.view.get_regions("inb_input")
-        regs[self.index] = sublime.Region(start, end)
-        self.view.add_regions("inb_input", regs, "string", "", input_draw_style)
-        self.output_result(edit)
-
-    def get_code(self, regions):
-        region = regions[self.index]
-        code = self.view.substr(region)
-        return code[1:]  # remove first \n
-
-    def update_code(self, regions):
-        self.cell.code = self.get_code(regions)
-
-    def select(self, pos=0):
-        regions = self.view.get_regions("inb_input")
-        reg = regions[self.index]
-        if pos < 0:
-            pos = pos + reg.size() - 1
-        pos = reg.begin() + 1 + pos
-        self.view.sel().clear()
-        self.view.sel().add(sublime.Region(pos, pos))
-        self.view.show_at_center(pos)
+    def update_code(self):
+        self.cell.code = self.get_code()
 
 
 class NotebookView(object):
@@ -123,6 +168,9 @@ class NotebookView(object):
         self.kernel.status_callback = self.on_status
         self.on_status({"execution_state": "idle"})
         self.notebook = self.kernel.get_notebook()
+
+    def get_cell_separator(self):
+        return "-"*120
 
     def on_modified(self):
         readonly = True
@@ -162,48 +210,63 @@ class NotebookView(object):
             if reg.contains(s):
                 self.view.run_command("left_delete")
                 return
-            elif (s.begin() == reg.begin() - 1) and (self.view.substr(s.begin()) == "\n"):
+            elif (reg.size() > 2) and (s.begin() == reg.begin() - 1) and (self.view.substr(s.begin()) == "\n"):
                 self.view.run_command("left_delete")
                 self.view.run_command("move", {"by": "characters", "forward": True})
                 return
 
-    def add_input_field(self, n, start=-1):
+    def add_cell(self, edit, start=-1):
         view = self.view
-        edit = view.begin_edit()
-        try:
-            if start < 0:
-                start = view.size()
+        if start < 0:
+            start = view.size()
 
-            self.view.set_read_only(False)
-            if n == 1:
-                start = start + view.insert(edit, start, "<>"*40 + "\n")
+        self.view.set_read_only(False)
+        start = start + view.insert(edit, start, self.get_cell_separator())
+        end = start + view.insert(edit, start, "\n\n")
 
-            start = start + view.insert(edit, start, "#Input[%d]" % n)
-            end = start + view.insert(edit, start, "\n\n")
+        reg = sublime.Region(start, end)
+        regs = view.get_regions("inb_cells")
+        regs.append(reg)
+        view.add_regions("inb_cells", regs, "string", "", cell_draw_style)
 
-            reg = sublime.Region(start, end)
-            regs = view.get_regions("inb_input")
-            regs.append(reg)
-            view.add_regions("inb_input", regs, "string", "", input_draw_style)
-            self.view.set_read_only(False)
+        return reg
 
-            end = end + view.insert(edit, end, "#/Input\n\n\n#Output[%d]\n" % n)
+    def insert_cell_field(self, edit, pos=0):
+        cell_regions = self.view.get_regions("inb_cells")
+        assert len(self.cells) == len(cell_regions)
 
-            start = end
-            end = start + view.insert(edit, start, "\n")
+        if (pos < 0) or (pos > len(self.cells)):
+            raise Exception("Wrong position to insert cell field")
 
-            reg = sublime.Region(start, end)
-            regs = view.get_regions("inb_output")
-            regs.append(reg)
-            view.add_regions("inb_output", regs, "string", "", output_draw_style)
-            self.view.set_read_only(False)
+        if pos > 0:
+            pos = cell_regions[pos-1].b
 
-            end = end + view.insert(edit, end, "#/Output\n")
-            end = end + view.insert(edit, end, "\n" + "<>"*40 + "\n\n")
+        self.add_cell(edit, start=pos)
 
-        except Exception as e:
-            print(e)
-        view.end_edit(edit)
+    def run_cell(self, edit):
+        cell_index = self.get_current_cell_index()
+        if cell_index < 0:
+            return
+
+        cell = self.get_cell_by_index(cell_index)
+        if not cell:
+            raise Exception("Cell not found")
+        if cell_index == len(self.cells) - 1:
+            self.insert_cell_at_position(edit, cell_index + 1)
+        cell.run(self.kernel)
+
+    def get_cell_by_index(self, cell_index):
+        res = self.cells[cell_index]
+        res.view = self.view
+        return res
+
+    def get_current_cell_index(self):
+        sel = self.view.sel()
+        if len(sel) > 1:
+            return -1
+        sel = self.view.sel()[0]
+        regions = self.view.get_regions("inb_cells")
+        return self.find_cell_by_selection(sel, regions)
 
     def find_cell_by_selection(self, sel, regions):
         for i, reg in enumerate(regions):
@@ -211,48 +274,29 @@ class NotebookView(object):
                 return i
         return -1
 
-    def run_cell(self):
-        sel = self.view.sel()
-        if len(sel) > 1:
-            return
-        sel = self.view.sel()[0]
-        regions = self.view.get_regions("inb_input")
-        cell_index = self.find_cell_by_selection(sel, regions)
-        if cell_index < 0:
-            return
-        cell = self.get_cell_by_index(cell_index)
-        if not cell:
-            raise Exception("Cell not found")
-        if cell_index == len(regions) - 1:
-            new_cell = self.notebook.create_new_cell()
-            new_view = CellView(cell_index + 1, self.view, new_cell)
-            self.cells.append(new_view)
-            self.add_input_field(cell_index + 2)
-        cell.run(regions, self.kernel)
-
-    def get_cell_by_index(self, cell_index):
-        res = self.cells[cell_index]
-        res.view = self.view
-        return res
-
     def save_notebook(self):
         self.kernel.save_notebook(self.notebook)
 
     def render_notebook(self, edit):
         self.cells = []
+        self.view.erase_regions("inb_cells")
+        self.view.erase_regions("inb_input")
+        self.view.erase_regions("inb_output")
         for i in xrange(self.notebook.cell_count):
-            self.add_input_field(i+1)
+            self.insert_cell_field(edit, i)
             cell = self.notebook.get_cell(i)
-            cell_view = CellView(i, self.view, cell)
+            cell_view = CodeCellView(i, self.view, cell)
             self.cells.append(cell_view)
 
+        regions = self.view.get_regions("inb_cells")
+        assert len(self.cells) == len(regions)
+
         for cell in self.cells:
-            cell.redraw(edit)
+            cell.draw(edit)
 
     def update_notebook_from_buffer(self):
-        regions = self.view.get_regions("inb_input")
         for cell in self.cells:
-            cell.update_code(regions)
+            cell.update_code()
 
     def on_status(self, content):
         def set_status():
@@ -273,41 +317,53 @@ class NotebookView(object):
         c2 = [s[col:] for s in compl]
         return ([(s + "\t (IPython)", s) for s in c2], sublime.INHIBIT_EXPLICIT_COMPLETIONS | sublime.INHIBIT_WORD_COMPLETIONS)
 
-    def get_current_cell_index(self):
-        sel = self.view.sel()
-        if len(sel) > 1:
-            return -1
-        sel = self.view.sel()[0]
-        regions = self.view.get_regions("inb_input")
-        return self.find_cell_by_selection(sel, regions)
-
-    def delete_current_cell(self):
+    def delete_current_cell(self, edit):
         cell_index = self.get_current_cell_index()
         if cell_index < 0:
             return
+
         self.update_notebook_from_buffer()
         self.notebook.delete_cell(cell_index)
-        self.view.run_command("inb_render_notebook")
+        del self.cells[cell_index]
+        for cell in self.cells:
+            if cell.index >= cell_index:
+                cell.index -= 1
+
+        regions = self.view.get_regions("inb_cells")
+        reg = regions[cell_index]
+        self.view.erase(edit, self.view.full_line(sublime.Region(reg.a, reg.b-1)))
+        regions = self.view.get_regions("inb_cells")
+        del regions[cell_index]
+        self.view.add_regions("inb_cells", regions, "string", "", cell_draw_style)
         new_cell_index = cell_index - 1 if cell_index > 0 else 0
         self.cells[new_cell_index].select()
 
-    def insert_cell_below(self):
+    def insert_cell_below(self, edit):
         cell_index = self.get_current_cell_index()
         if cell_index < 0:
             return
-        self.update_notebook_from_buffer()
-        self.notebook.create_new_cell(cell_index + 1)
-        self.view.run_command("inb_render_notebook")
-        self.cells[cell_index+1].select()
 
-    def insert_cell_above(self):
+        self.insert_cell_at_position(edit, cell_index + 1)
+
+    def insert_cell_above(self, edit):
         cell_index = self.get_current_cell_index()
         if cell_index < 0:
             return
+
+        self.insert_cell_at_position(edit, cell_index)
+
+    def insert_cell_at_position(self, edit, cell_index):
         self.update_notebook_from_buffer()
-        self.notebook.create_new_cell(cell_index)
-        self.view.run_command("inb_render_notebook")
-        self.cells[cell_index].select()
+        for cell in self.cells:
+            if cell.index >= cell_index:
+                cell.index += 1
+
+        new_cell = self.notebook.create_new_cell(cell_index)
+        new_view = CodeCellView(cell_index, self.view, new_cell)
+        self.insert_cell_field(edit, cell_index)
+        self.cells.insert(cell_index, new_view)
+        new_view.draw(edit)
+        new_view.select()
 
     def move_up(self):
         cell_index = self.get_current_cell_index()
@@ -315,11 +371,10 @@ class NotebookView(object):
             return False
         else:
             sel = self.view.sel()[0].begin()
-            regions = self.view.get_regions("inb_input")
-            reg = regions[cell_index]
-            if self.view.line(reg.begin()+1) == self.view.line(sel):
+            reg = self.cells[cell_index].get_input_region()
+            if self.view.line(reg.begin()) == self.view.line(sel):
                 if cell_index > 0:
-                    self.cells[cell_index-1].select(-1)
+                    self.cells[cell_index-1].select(last_line=True)
                 return True
         return False
 
@@ -329,9 +384,8 @@ class NotebookView(object):
             return False
         else:
             sel = self.view.sel()[0].begin()
-            regions = self.view.get_regions("inb_input")
-            reg = regions[cell_index]
-            if self.view.line(reg.end()-1) == self.view.line(sel):
+            reg = self.cells[cell_index].get_input_region()
+            if self.view.line(reg.end()) == self.view.line(sel):
                 if cell_index < len(self.cells) - 1:
                     self.cells[cell_index+1].select()
                 return True
@@ -343,9 +397,8 @@ class NotebookView(object):
             return False
         else:
             sel = self.view.sel()[0].begin()
-            regions = self.view.get_regions("inb_input")
-            reg = regions[cell_index]
-            if sel == reg.begin() + 1:
+            reg = self.cells[cell_index].get_input_region()
+            if sel == reg.begin():
                 return True
         return False
 
@@ -355,9 +408,8 @@ class NotebookView(object):
             return False
         else:
             sel = self.view.sel()[0].begin()
-            regions = self.view.get_regions("inb_input")
-            reg = regions[cell_index]
-            if sel == reg.end()-1:
+            reg = self.cells[cell_index].get_input_region()
+            if sel == reg.end():
                 return True
         return False
 
@@ -483,28 +535,28 @@ class InbRunInNotebookCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         nbview = manager.get_nb_view(self.view)
         if nbview:
-            nbview.run_cell()
+            nbview.run_cell(edit)
 
 
 class InbDeleteCurrentCellCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         nbview = manager.get_nb_view(self.view)
         if nbview:
-            nbview.delete_current_cell()
+            nbview.delete_current_cell(edit)
 
 
 class InbInsertCellAboveCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         nbview = manager.get_nb_view(self.view)
         if nbview:
-            nbview.insert_cell_above()
+            nbview.insert_cell_above(edit)
 
 
 class InbInsertCellBelowCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         nbview = manager.get_nb_view(self.view)
         if nbview:
-            nbview.insert_cell_below()
+            nbview.insert_cell_below(edit)
 
 
 class InbComplete(sublime_plugin.EventListener):
