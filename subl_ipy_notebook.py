@@ -23,6 +23,7 @@ class BaseCellView(object):
         self.cell = cell
         self.cell.cell_view = self
         self.buffer_ready = False
+        self.owned_regions = ["inb_input"]
 
     def get_cell_region(self):
         reg = self.view.get_regions("inb_cells")[self.index]
@@ -69,6 +70,14 @@ class BaseCellView(object):
     def setup(self, edit):
         self.buffer_ready = True
 
+    def teardown(self, edit):
+        cell_reg = self.get_cell_region()
+        for regname in self.owned_regions:
+            all_regs = self.view.get_regions(regname)
+            all_regs = [reg for reg in all_regs if not cell_reg.contains(reg)]
+            self.view.add_regions(regname, all_regs, "string", "", input_draw_style)
+        self.view.erase(edit, sublime.Region(cell_reg.a, cell_reg.b-1))
+
     def draw(self, edit):
         if not self.buffer_ready:
             self.setup(edit)
@@ -85,6 +94,7 @@ class CodeCellView(BaseCellView):
     def __init__(self, index, view, cell):
         BaseCellView.__init__(self, index, view, cell)
         self.running = False
+        self.owned_regions.append("inb_output")
 
     def run(self, kernel):
         if self.running:
@@ -94,7 +104,7 @@ class CodeCellView(BaseCellView):
 
         self.running = True
         code = self.get_code()
-        self.cell.code = code
+        self.cell.source = code
         self.cell.run(kernel)
 
     def setup(self, edit):
@@ -116,7 +126,7 @@ class CodeCellView(BaseCellView):
         view.add_regions("inb_input", regs, "string", "", input_draw_style)
         self.view.set_read_only(False)
 
-        end = end + view.insert(edit, end, "#/Input\n\n\n#Output[%d]" % n)
+        end = end + view.insert(edit, end, "#/Input\n\n#Output[%d]" % n)
 
         start = end
         end = start + view.insert(edit, start, "\n\n")
@@ -142,14 +152,73 @@ class CodeCellView(BaseCellView):
 
     def draw(self, edit):
         BaseCellView.draw(self, edit)
-        self.write_to_region(edit, "inb_input", self.cell.code)
+        self.write_to_region(edit, "inb_input", self.cell.source)
         self.write_to_region(edit, "inb_output", self.cell.output)
 
     def get_code(self):
         return self.get_input_content()
 
     def update_code(self):
-        self.cell.code = self.get_code()
+        self.cell.source = self.get_code()
+
+
+class TextCell(BaseCellView):
+    def __init__(self, index, view, cell):
+        BaseCellView.__init__(self, index, view, cell)
+
+    def run(self, kernel):
+        print "Cannot run Markdown cell"
+
+    def get_cell_title(self):
+        if self.cell.cell_type == "markdown":
+            return "Markdown"
+        elif self.cell.cell_type == "raw":
+            return "Raw text"
+        elif self.cell.cell_type == "heading":
+            return "Heading"
+        else:
+            print "Unknwon cell type: " + str(self.cell.cell_type)
+            return "Unknown"
+
+    def setup(self, edit):
+        BaseCellView.setup(self, edit)
+        region = self.get_cell_region()
+        start = region.a
+
+        view = self.view
+
+        self.view.set_read_only(False)
+
+        start = start + view.insert(edit, start, "#" + self.get_cell_title())
+        end = start + view.insert(edit, start, "\n\n")
+
+        reg = sublime.Region(start, end)
+        regs = view.get_regions("inb_input")
+        regs.append(reg)
+        view.add_regions("inb_input", regs, "string", "", input_draw_style)
+        self.view.set_read_only(False)
+
+        end = end + view.insert(edit, end, "#/" + self.get_cell_title())
+
+    def on_execute_reply(self, msg_id, content):
+        raise Exception("Shouldn't get this")
+
+    def draw(self, edit):
+        BaseCellView.draw(self, edit)
+        self.write_to_region(edit, "inb_input", self.cell.source)
+
+    def get_source(self):
+        return self.get_input_content()
+
+    def update_code(self):
+        self.cell.source = self.get_source()
+
+
+def create_cell_view(index, view, cell):
+    if cell.cell_type == "code":
+        return CodeCellView(index, view, cell)
+    else:
+        return TextCell(index, view, cell)
 
 
 class NotebookView(object):
@@ -285,7 +354,7 @@ class NotebookView(object):
         for i in xrange(self.notebook.cell_count):
             self.insert_cell_field(edit, i)
             cell = self.notebook.get_cell(i)
-            cell_view = CodeCellView(i, self.view, cell)
+            cell_view = create_cell_view(i, self.view, cell)
             self.cells.append(cell_view)
 
         regions = self.view.get_regions("inb_cells")
@@ -358,8 +427,8 @@ class NotebookView(object):
             if cell.index >= cell_index:
                 cell.index += 1
 
-        new_cell = self.notebook.create_new_cell(cell_index)
-        new_view = CodeCellView(cell_index, self.view, new_cell)
+        new_cell = self.notebook.create_new_cell(cell_index, "code")
+        new_view = create_cell_view(cell_index, self.view, new_cell)
         self.insert_cell_field(edit, cell_index)
         self.cells.insert(cell_index, new_view)
         new_view.draw(edit)
@@ -412,6 +481,24 @@ class NotebookView(object):
             if sel == reg.end():
                 return True
         return False
+
+    def change_current_cell_type(self, edit, new_type):
+        cell_index = self.get_current_cell_index()
+        if cell_index < 0:
+            return
+
+        if self.cells[cell_index].cell.cell_type == new_type:
+            return
+
+        src = self.cells[cell_index].get_input_content()
+        self.notebook.delete_cell(cell_index)
+        new_cell = self.notebook.create_new_cell(cell_index, new_type)
+        new_cell.source = src
+        new_view = create_cell_view(cell_index, self.view, new_cell)
+        self.cells[cell_index].teardown(edit)
+        self.cells[cell_index] = new_view
+        new_view.draw(edit)
+        new_view.select()
 
 
 class NotebookViewManager(object):
@@ -605,3 +692,10 @@ class InbOpenAsIpynbCommand(sublime_plugin.WindowCommand):
             new_view.insert(edit, 0, s)
             new_view.end_edit(edit)
             new_view.set_name(nbview.name + ".ipynb")
+
+
+class InbChangeCellTypeCommand(sublime_plugin.TextCommand):
+    def run(self, edit, new_type):
+        nbview = manager.get_nb_view(self.view)
+        if nbview:
+            nbview.change_current_cell_type(edit, new_type)

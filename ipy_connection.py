@@ -75,8 +75,12 @@ class Notebook(object):
     def cell_count(self):
         return len(self._cells)
 
-    def create_new_cell(self, position=-1):
-        new_cell = nbformat.new_code_cell(input="")
+    def create_new_cell(self, position, cell_type):
+        if cell_type == "code":
+            new_cell = nbformat.new_code_cell(input="")
+        elif (cell_type == "markdown") or (cell_type == "raw"):
+            new_cell = nbformat.new_text_cell(cell_type, source="")
+
         if position < 0:
             position = len(self._cells)
         self._cells.insert(position, new_cell)
@@ -95,19 +99,26 @@ class Cell(object):
         self.runnig = False
         self.cell_view = None
 
-    def get_cell_type(self):
+    @property
+    def cell_type(self):
         return self._cell.cell_type
 
-    def code():
-        doc = "The code property."
+    def source():
+        doc = "The source property."
 
         def fget(self):
-            return "".join(self._cell.input)
+            if self.cell_type == "code":
+                return "".join(self._cell.input)
+            else:
+                return "".join(self._cell.source)
 
         def fset(self, value):
-            self._cell.input = value
+            if self.cell_type == "code":
+                self._cell.input = value
+            else:
+                self._cell.source = value
         return locals()
-    code = property(**code())
+    source = property(**source())
 
     @property
     def output(self):
@@ -152,11 +163,14 @@ class Cell(object):
         self.cell_view.on_execute_reply(msg_id, content)
 
     def run(self, kernel):
+        if self.cell_type != "code":
+            return
+
         self._cell.outputs = []
         if self.cell_view:
             self.cell_view.update_output()
 
-        kernel.run(self.code, output_callback=self.on_output,
+        kernel.run(self.source, output_callback=self.on_output,
                    execute_reply_callback=self.on_execute_reply)
 
 

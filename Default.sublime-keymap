@@ -4,7 +4,7 @@
     	"context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]  
     },
     { 
-    	"keys": ["backspace"], "command": "inb_backspace", "args": {},
+    	"keys": ["backspace"], "command": "inb_backspace", 
 		"context":
 			[
 			{ "key": "setting.ipython_notebook", "operator": "equal", "operand": true },
@@ -30,6 +30,18 @@
     },
     { 
         "keys": ["ctrl+m", "b"], "command": "inb_insert_cell_below",
+        "context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]  
+    },
+    { 
+        "keys": ["ctrl+m", "y"], "command": "inb_change_cell_type", "args": {"new_type" : "code"},
+        "context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]  
+    },
+    { 
+        "keys": ["ctrl+m", "m"], "command": "inb_change_cell_type", "args": {"new_type" : "markdown"},
+        "context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]  
+    },
+    { 
+        "keys": ["ctrl+m", "t"], "command": "inb_change_cell_type", "args": {"new_type" : "raw"},
         "context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]  
     },
     { 
