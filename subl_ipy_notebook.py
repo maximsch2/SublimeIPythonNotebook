@@ -6,6 +6,7 @@
 import sublime
 import sublime_plugin
 import ipy_connection
+import re
 
 
 def create_kernel(baseurl, notebook_id):
@@ -91,9 +92,10 @@ class BaseCellView(object):
 
 
 class CodeCellView(BaseCellView):
-    def __init__(self, index, view, cell):
+    def __init__(self, nbview, index, view, cell):
         BaseCellView.__init__(self, index, view, cell)
         self.running = False
+        self.nbview = nbview
         self.owned_regions.append("inb_output")
 
     def run(self, kernel):
@@ -146,6 +148,11 @@ class CodeCellView(BaseCellView):
 
     def on_execute_reply(self, msg_id, content):
         self.running = False
+        if "payload" in content:
+            for p in content["payload"]:
+                if (p["source"] == "IPython.zmq.page.page") or (p["source"] == "IPython.kernel.zmq.page.page"):
+                    print "on_pager"
+                    self.nbview.on_pager(p["text"])
 
     def output_result(self, edit):
         self.write_to_region(edit, "inb_output", self.cell.output)
@@ -163,9 +170,6 @@ class CodeCellView(BaseCellView):
 
 
 class TextCell(BaseCellView):
-    def __init__(self, index, view, cell):
-        BaseCellView.__init__(self, index, view, cell)
-
     def run(self, kernel):
         print "Cannot run Markdown cell"
 
@@ -212,13 +216,6 @@ class TextCell(BaseCellView):
 
     def update_code(self):
         self.cell.source = self.get_source()
-
-
-def create_cell_view(index, view, cell):
-    if cell.cell_type == "code":
-        return CodeCellView(index, view, cell)
-    else:
-        return TextCell(index, view, cell)
 
 
 class NotebookView(object):
@@ -354,7 +351,7 @@ class NotebookView(object):
         for i in xrange(self.notebook.cell_count):
             self.insert_cell_field(edit, i)
             cell = self.notebook.get_cell(i)
-            cell_view = create_cell_view(i, self.view, cell)
+            cell_view = self.create_cell_view(i, self.view, cell)
             self.cells.append(cell_view)
 
         regions = self.view.get_regions("inb_cells")
@@ -380,11 +377,9 @@ class NotebookView(object):
         sel = sel[0]
         line = view.substr(view.line(sel))
         row, col = view.rowcol(sel.begin())
-        if line[col-1] != ".":
-            return []
-        compl = self.kernel.get_completitions(line, col)
-        c2 = [s[col:] for s in compl]
-        return ([(s + "\t (IPython)", s) for s in c2], sublime.INHIBIT_EXPLICIT_COMPLETIONS | sublime.INHIBIT_WORD_COMPLETIONS)
+        compl = self.kernel.get_completitions(line, col, timeout=0.5)
+        #compl = [s[col:] for s in compl]
+        return ([(s + "\t (IPython)", s) for s in compl], sublime.INHIBIT_EXPLICIT_COMPLETIONS | sublime.INHIBIT_WORD_COMPLETIONS)
 
     def delete_current_cell(self, edit):
         cell_index = self.get_current_cell_index()
@@ -428,7 +423,7 @@ class NotebookView(object):
                 cell.index += 1
 
         new_cell = self.notebook.create_new_cell(cell_index, "code")
-        new_view = create_cell_view(cell_index, self.view, new_cell)
+        new_view = self.create_cell_view(cell_index, self.view, new_cell)
         self.insert_cell_field(edit, cell_index)
         self.cells.insert(cell_index, new_view)
         new_view.draw(edit)
@@ -494,11 +489,28 @@ class NotebookView(object):
         self.notebook.delete_cell(cell_index)
         new_cell = self.notebook.create_new_cell(cell_index, new_type)
         new_cell.source = src
-        new_view = create_cell_view(cell_index, self.view, new_cell)
+        new_view = self.create_cell_view(cell_index, self.view, new_cell)
         self.cells[cell_index].teardown(edit)
         self.cells[cell_index] = new_view
         new_view.draw(edit)
         new_view.select()
+
+    def create_cell_view(self, index, view, cell):
+        if cell.cell_type == "code":
+            return CodeCellView(self, index, view, cell)
+        else:
+            return TextCell(index, view, cell)
+
+    def on_pager(self, text):
+        text = re.sub("\x1b[^m]*m", "", text)
+
+        def do():
+            pager_view = self.view.window().get_output_panel("help")
+            edit = pager_view.begin_edit()
+            pager_view.insert(edit, 0, text)
+            pager_view.end_edit(edit)
+            self.view.window().run_command("show_panel", {"panel": "output.help"})
+        sublime.set_timeout(do, 0)
 
 
 class NotebookViewManager(object):

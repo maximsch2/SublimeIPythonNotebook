@@ -1,6 +1,4 @@
 - Correctly handle 'dead' message from the kernel
-- Completion should work in the middle of the string: "a = x." not only for "x."
-- Use get_output_panel to dispaly help strings/object infos
 - Add support for creating/renaming notebooks
 - Add an option of saving a backup copy of notebook json file (use git to have all copies?):
     - For now it is possible to use inb_open_as_ipynb command

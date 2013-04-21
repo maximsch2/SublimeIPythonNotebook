@@ -193,6 +193,7 @@ class Kernel(object):
         self.start_kernel()
         thread.start_new_thread(self.process_messages, ())
         self.status_callback = None
+        self.pager_callback = None
 
     @property
     def kernel_id(self):
@@ -342,9 +343,7 @@ class Kernel(object):
             self.create_websockets()
         self.shell.send(json.dumps(msg))
 
-    def get_completitions(self, line, cursor_pos, text=""):
-        if text == "":
-            text = line
+    def get_completitions(self, line, cursor_pos, text="", timeout=1):
         msg = self.create_message("complete_request",
                                   dict(line=line, cursor_pos=cursor_pos, text=text))
         msg_id = msg["header"]["msg_id"]
@@ -357,7 +356,7 @@ class Kernel(object):
         callbacks = {"complete_reply": callback}
         self.message_callbacks[msg_id] = callbacks
         self.send_shell(msg)
-        ev.wait(1)
+        ev.wait(timeout)
         del self.message_callbacks[msg_id]
         return matches
 
