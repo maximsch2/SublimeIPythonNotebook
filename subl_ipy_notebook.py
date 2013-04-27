@@ -46,7 +46,7 @@ class BaseCellView(object):
         return self.get_region("inb_input")
 
     def write_to_region(self, edit, regname, text):
-        if not text:
+        if text is None:
             return
         if text.endswith("\n"):
             text = text[:-1]
