@@ -45,6 +45,10 @@
         "context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]  
     },
     { 
+        "keys": ["ctrl+m", "s"], "command": "inb_save_notebook",
+        "context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]  
+    },
+    { 
         "keys": ["up"], "command": "inb_move_up",
         "context" : [ 
             { "key": "setting.ipython_notebook", "operator": "equal", "operand": true },
@@ -99,7 +103,7 @@
             { "key": "setting.ipython_notebook", "operator": "equal", "operand": true },
             { "key": "auto_complete_visible", "operator": "equal", "operand": false }
             ]  
-    }    
+    } 
 
 
 
