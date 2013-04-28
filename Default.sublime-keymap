@@ -52,6 +52,34 @@
             ]  
     },
     { 
+        "keys": ["ctrl+up"], "command": "inb_move_to_cell", "args": {"up" : true},
+        "context" : [ 
+            { "key": "setting.ipython_notebook", "operator": "equal", "operand": true },
+            { "key": "auto_complete_visible", "operator": "equal", "operand": false }
+            ]  
+    },
+    { 
+        "keys": ["ctrl+down"], "command": "inb_move_to_cell", "args": {"up" : false},
+        "context" : [ 
+            { "key": "setting.ipython_notebook", "operator": "equal", "operand": true },
+            { "key": "auto_complete_visible", "operator": "equal", "operand": false }
+            ]  
+    },
+    { 
+        "keys": ["ctrl+m", "p"], "command": "inb_move_to_cell", "args": {"up" : true},
+        "context" : [ 
+            { "key": "setting.ipython_notebook", "operator": "equal", "operand": true },
+            { "key": "auto_complete_visible", "operator": "equal", "operand": false }
+            ]  
+    },
+    { 
+        "keys": ["ctrl+m", "n"], "command": "inb_move_to_cell", "args": {"up" : false},
+        "context" : [ 
+            { "key": "setting.ipython_notebook", "operator": "equal", "operand": true },
+            { "key": "auto_complete_visible", "operator": "equal", "operand": false }
+            ]  
+    },
+    { 
         "keys": ["down"], "command": "inb_move_down",
         "context" : [ 
             { "key": "setting.ipython_notebook", "operator": "equal", "operand": true },

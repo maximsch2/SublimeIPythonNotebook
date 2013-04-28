@@ -98,6 +98,10 @@ class CodeCellView(BaseCellView):
         self.nbview = nbview
         self.owned_regions.append("inb_output")
 
+    @property
+    def prompt(self):
+        return self.cell.prompt
+
     def run(self, kernel):
         if self.running:
             print "Warning"
@@ -115,11 +119,10 @@ class CodeCellView(BaseCellView):
         start = region.a
 
         view = self.view
-        n = self.index
 
         self.view.set_read_only(False)
 
-        start = start + view.insert(edit, start, "#Input[%d]" % n)
+        start = start + view.insert(edit, start, "#Input[%s]" % self.prompt)
         end = start + view.insert(edit, start, "\n\n")
 
         reg = sublime.Region(start, end)
@@ -128,7 +131,7 @@ class CodeCellView(BaseCellView):
         view.add_regions("inb_input", regs, "string", "", input_draw_style)
         self.view.set_read_only(False)
 
-        end = end + view.insert(edit, end, "#/Input\n\n#Output[%d]" % n)
+        end = end + view.insert(edit, end, "#/Input\n\n#Output[%s]" % self.prompt)
 
         start = end
         end = start + view.insert(edit, start, "\n\n")
@@ -148,11 +151,25 @@ class CodeCellView(BaseCellView):
 
     def on_execute_reply(self, msg_id, content):
         self.running = False
+        self.update_prompt_number()
         if "payload" in content:
             for p in content["payload"]:
                 if (p["source"] == "IPython.zmq.page.page") or (p["source"] == "IPython.kernel.zmq.page.page"):
-                    print "on_pager"
                     self.nbview.on_pager(p["text"])
+
+    def update_prompt_number(self):
+        def do_set():
+            edit = self.view.begin_edit()
+            try:
+                inp_reg = self.get_input_region()
+                line = self.view.line(inp_reg.begin() - 1)
+                self.view.replace(edit, line, "#Input[%s]" % self.prompt)
+                out_reg = self.get_region("inb_output")
+                line = self.view.line(out_reg.begin() - 1)
+                self.view.replace(edit, line, "#Output[%s]" % self.prompt)
+            finally:
+                self.view.end_edit(edit)
+        sublime.set_timeout(do_set, 0)
 
     def output_result(self, edit):
         self.write_to_region(edit, "inb_output", self.cell.output)
@@ -512,6 +529,16 @@ class NotebookView(object):
             self.view.window().run_command("show_panel", {"panel": "output.help"})
         sublime.set_timeout(do, 0)
 
+    def move_to_cell(self, up):
+        cell_index = self.get_current_cell_index()
+        if cell_index < 0:
+            return
+
+        if up and cell_index > 0:
+            self.cells[cell_index - 1].select(True)
+        elif not up and (cell_index < len(self.cells) - 1):
+            self.cells[cell_index + 1].select()
+
 
 class NotebookViewManager(object):
     def __init__(self):
@@ -704,6 +731,13 @@ class InbOpenAsIpynbCommand(sublime_plugin.WindowCommand):
             new_view.insert(edit, 0, s)
             new_view.end_edit(edit)
             new_view.set_name(nbview.name + ".ipynb")
+
+
+class InbMoveToCell(sublime_plugin.TextCommand):
+    def run(self, edit, up):
+        nbview = manager.get_nb_view(self.view)
+        if nbview:
+            nbview.move_to_cell(up)
 
 
 class InbChangeCellTypeCommand(sublime_plugin.TextCommand):

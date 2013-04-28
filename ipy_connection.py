@@ -160,15 +160,24 @@ class Cell(object):
 
     def on_execute_reply(self, msg_id, content):
         self.running = False
+        if 'execution_count' in content:
+            self._cell.prompt_number = content['execution_count']
         self.cell_view.on_execute_reply(msg_id, content)
+
+    @property
+    def prompt(self):
+        s = str(self._cell.prompt_number)
+        return s if s else " "
 
     def run(self, kernel):
         if self.cell_type != "code":
             return
 
+        self._cell.prompt_number = '*'
         self._cell.outputs = []
         if self.cell_view:
             self.cell_view.update_output()
+            self.cell_view.update_prompt_number()
 
         kernel.run(self.source, output_callback=self.on_output,
                    execute_reply_callback=self.on_execute_reply)
