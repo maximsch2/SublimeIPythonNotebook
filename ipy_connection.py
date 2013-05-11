@@ -166,8 +166,10 @@ class Cell(object):
 
     @property
     def prompt(self):
-        s = str(self._cell.prompt_number)
-        return s if s else " "
+        if 'prompt_number' in self._cell:
+            return str(self._cell.prompt_number)
+        else:
+            return " "
 
     def run(self, kernel):
         if self.cell_type != "code":
