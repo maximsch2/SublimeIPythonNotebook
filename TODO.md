@@ -1,3 +1,4 @@
+- Opening empty new notebooks doesn't work. Should also support creating new notebooks from ST
 - Support set_next_input
 - Correctly handle 'dead' message from the kernel
 - Add support for creating/renaming notebooks

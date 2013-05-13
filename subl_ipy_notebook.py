@@ -337,6 +337,7 @@ class NotebookView(object):
         if cell_index == len(self.cells) - 1:
             self.insert_cell_at_position(edit, cell_index + 1)
         cell.run(self.kernel)
+        self.move_to_cell(False)
 
     def get_cell_by_index(self, cell_index):
         res = self.cells[cell_index]
