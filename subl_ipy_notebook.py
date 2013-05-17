@@ -181,14 +181,15 @@ class CodeCellView(BaseCellView):
 
 class RewritePromptNumberCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        print('rewriting prompt number')
         nbview = manager.get_nb_view(self.view)
         if not nbview:
             raise Exception("Failed to get NBView")
-        cellidx = nbview.get_current_cell_index()
+        cellidx = nbview.get_current_cell_index() - 1
         cell = nbview.get_cell_by_index(cellidx)
         inp_reg = cell.get_cell_region()
-        line = self.view.line(inp_reg.begin() - 1)
+        line = self.view.line(inp_reg.begin())
+        print('rewriting prompt number - prompt is {}'.format(cell.prompt))
+        print('replacing line {}'.format(line))
         self.view.replace(edit, line, "#Input[%s]" % cell.prompt)
         out_reg = cell.get_region("inb_output")
         line = self.view.line(out_reg.begin() - 1)
