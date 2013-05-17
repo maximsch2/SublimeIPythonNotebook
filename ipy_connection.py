@@ -24,8 +24,10 @@ def create_uid():
 
 
 def get_notebooks(baseurl):
-    req = urllib2.urlopen("http://" + baseurl + "/notebooks")
-    data = json.loads(req.read())
+    req = urllib.request.urlopen("http://" + baseurl + "/notebooks")
+    encoding = req.headers.get_content_charset()
+    body = req.readall().decode(encoding)
+    data = json.loads(body)
     return data
 
 
