@@ -56,10 +56,10 @@ def _join_lines(lines):
     """
     if lines and lines[0].endswith(('\n', '\r')):
         # created by splitlines(True)
-        return u''.join(lines)
+        return ''.join(lines)
     else:
         # created by splitlines()
-        return u'\n'.join(lines)
+        return '\n'.join(lines)
 
 
 def rejoin_lines(nb):
@@ -101,17 +101,17 @@ def split_lines(nb):
     for ws in nb.worksheets:
         for cell in ws.cells:
             if cell.cell_type == 'code':
-                if 'input' in cell and isinstance(cell.input, basestring):
+                if 'input' in cell and isinstance(cell.input, str):
                     cell.input = cell.input.splitlines(True)
                 for output in cell.outputs:
                     for key in _multiline_outputs:
                         item = output.get(key, None)
-                        if isinstance(item, basestring):
+                        if isinstance(item, str):
                             output[key] = item.splitlines(True)
             else: # text, heading cell
                 for key in ['source', 'rendered']:
                     item = cell.get(key, None)
-                    if isinstance(item, basestring):
+                    if isinstance(item, str):
                         cell[key] = item.splitlines(True)
     return nb
 
@@ -128,11 +128,11 @@ def base64_decode(nb):
             if cell.cell_type == 'code':
                 for output in cell.outputs:
                     if 'png' in output:
-                        if isinstance(output.png, unicode):
+                        if isinstance(output.png, str):
                             output.png = output.png.encode('ascii')
                         output.png = decodestring(output.png)
                     if 'jpeg' in output:
-                        if isinstance(output.jpeg, unicode):
+                        if isinstance(output.jpeg, str):
                             output.jpeg = output.jpeg.encode('ascii')
                         output.jpeg = decodestring(output.jpeg)
     return nb
@@ -166,7 +166,7 @@ class NotebookReader(object):
     def read(self, fp, **kwargs):
         """Read a notebook from a file like object"""
         nbs = fp.read()
-        if not py3compat.PY3 and not isinstance(nbs, unicode):
+        if not py3compat.PY3 and not isinstance(nbs, str):
             nbs = py3compat.str_to_unicode(nbs)
         return self.reads(nbs, **kwargs)
 
@@ -181,7 +181,7 @@ class NotebookWriter(object):
     def write(self, nb, fp, **kwargs):
         """Write a notebook to a file like object"""
         nbs = self.writes(nb,**kwargs)
-        if not py3compat.PY3 and not isinstance(nbs, unicode):
+        if not py3compat.PY3 and not isinstance(nbs, str):
             # this branch is likely only taken for JSON on Python 2
             nbs = py3compat.str_to_unicode(nbs)
         return fp.write(nbs)

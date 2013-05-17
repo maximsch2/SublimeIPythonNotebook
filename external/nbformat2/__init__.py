@@ -59,15 +59,15 @@ def parse_filename(fname):
     (fname, name, format) : (unicode, unicode, unicode)
         The filename, notebook name and format.
     """
-    if fname.endswith(u'.ipynb'):
-        format = u'json'
-    elif fname.endswith(u'.json'):
-        format = u'json'
-    elif fname.endswith(u'.py'):
-        format = u'py'
+    if fname.endswith('.ipynb'):
+        format = 'json'
+    elif fname.endswith('.json'):
+        format = 'json'
+    elif fname.endswith('.py'):
+        format = 'py'
     else:
-        fname = fname + u'.ipynb'
-        format = u'json'
+        fname = fname + '.ipynb'
+        format = 'json'
     name = fname.split('.')[0]
     return fname, name, format
 
