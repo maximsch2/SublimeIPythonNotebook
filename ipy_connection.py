@@ -249,7 +249,7 @@ class Kernel(object):
         return "http://" + self.baseurl + "/notebooks/" + self.notebook_id
 
     def save_notebook(self, notebook):
-        request = urllib.request.Request(self.notebook_url, str(notebook))
+        request = urllib.request.Request(self.notebook_url, str(notebook).encode(self.encoding))
         request.add_header("Content-Type", "application/json")
         request.get_method = lambda: "PUT"
         data = urllib.request.urlopen(request)
