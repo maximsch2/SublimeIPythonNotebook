@@ -5,7 +5,7 @@
 
 import sublime
 import sublime_plugin
-import ipy_connection
+from SublimeIPythonNotebook import ipy_connection
 import re
 
 
@@ -158,18 +158,11 @@ class CodeCellView(BaseCellView):
                     self.nbview.on_pager(p["text"])
 
     def update_prompt_number(self):
-        def do_set():
-            edit = self.view.begin_edit()
-            try:
-                inp_reg = self.get_input_region()
-                line = self.view.line(inp_reg.begin() - 1)
-                self.view.replace(edit, line, "#Input[%s]" % self.prompt)
-                out_reg = self.get_region("inb_output")
-                line = self.view.line(out_reg.begin() - 1)
-                self.view.replace(edit, line, "#Output[%s]" % self.prompt)
-            finally:
-                self.view.end_edit(edit)
-        sublime.set_timeout(do_set, 0)
+        # def do_set():
+        #     mtc = MyTextCommand(self, self.view)
+        #     mtc.run()
+        self.view.run_command('rewrite_prompt_number')
+        # sublime.set_timeout(do_set, 0)
 
     def output_result(self, edit):
         self.write_to_region(edit, "inb_output", self.cell.output)
@@ -184,6 +177,22 @@ class CodeCellView(BaseCellView):
 
     def update_code(self):
         self.cell.source = self.get_code()
+
+
+class RewritePromptNumberCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        print('rewriting prompt number')
+        nbview = manager.get_nb_view(self.view)
+        if not nbview:
+            raise Exception("Failed to get NBView")
+        cellidx = nbview.get_current_cell_index()
+        cell = nbview.get_cell_by_index(cellidx)
+        inp_reg = cell.get_cell_region()
+        line = self.view.line(inp_reg.begin() - 1)
+        self.view.replace(edit, line, "#Input[%s]" % cell.prompt)
+        out_reg = cell.get_region("inb_output")
+        line = self.view.line(out_reg.begin() - 1)
+        self.view.replace(edit, line, "#Output[%s]" % cell.prompt)
 
 
 class TextCell(BaseCellView):
