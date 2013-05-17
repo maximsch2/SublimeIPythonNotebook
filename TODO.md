@@ -5,3 +5,4 @@
 - Add an option of saving a backup copy of notebook json file (use git to have all copies?):
     - For now it is possible to use inb_open_as_ipynb command
 - Use scopes to highlight python code only inside input cells
+- Put feedback from the notebook in status bar (on save etc.)
