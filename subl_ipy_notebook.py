@@ -184,12 +184,11 @@ class RewritePromptNumberCommand(sublime_plugin.TextCommand):
         nbview = manager.get_nb_view(self.view)
         if not nbview:
             raise Exception("Failed to get NBView")
+
         cellidx = nbview.get_current_cell_index() - 1
         cell = nbview.get_cell_by_index(cellidx)
         inp_reg = cell.get_cell_region()
         line = self.view.line(inp_reg.begin())
-        print('rewriting prompt number - prompt is {}'.format(cell.prompt))
-        print('replacing line {}'.format(line))
         self.view.replace(edit, line, "#Input[%s]" % cell.prompt)
         out_reg = cell.get_region("inb_output")
         line = self.view.line(out_reg.begin() - 1)
@@ -532,13 +531,6 @@ class NotebookView(object):
     def on_pager(self, text):
         text = re.sub("\x1b[^m]*m", "", text)
         self.view.run_command('set_pager_text', {'text': text})
-        # def do():
-        #     pager_view = self.view.window().get_output_panel("help")
-        #     edit = pager_view.begin_edit()
-        #     pager_view.insert(edit, 0, text)
-        #     pager_view.end_edit(edit)
-        #     self.view.window().run_command("show_panel", {"panel": "output.help"})
-        # sublime.set_timeout(do, 0)
 
     def move_to_cell(self, up):
         cell_index = self.get_current_cell_index()
@@ -610,7 +602,6 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
 class SetPagerTextCommand(sublime_plugin.TextCommand):
     """command to set the text in the pop-up pager"""
     def run(self, edit, text):
-        nbview = manager.get_nb_view(self.view)
         pager_view = self.view.window().get_output_panel("help")
         pager_view.insert(edit, 0, text)
         self.view.window().run_command("show_panel", {"panel": "output.help"})
@@ -746,10 +737,14 @@ class InbOpenAsIpynbCommand(sublime_plugin.WindowCommand):
         if nbview:
             s = str(nbview.notebook)
             new_view = self.window.new_file()
-            edit = new_view.begin_edit()
-            new_view.insert(edit, 0, s)
-            new_view.end_edit(edit)
+            # edit = new_view.begin_edit()
+            new_view.run_command('inb_insert_string', {'s': s})
+            # new_view.end_edit(edit)
             new_view.set_name(nbview.name + ".ipynb")
+
+class InbInsertStringCommand(sublime_plugin.TextCommand):
+    def run(self, edit, s):
+        self.view.insert(edit, 0, s)
 
 
 class InbMoveToCell(sublime_plugin.TextCommand):
