@@ -531,14 +531,14 @@ class NotebookView(object):
 
     def on_pager(self, text):
         text = re.sub("\x1b[^m]*m", "", text)
-
-        def do():
-            pager_view = self.view.window().get_output_panel("help")
-            edit = pager_view.begin_edit()
-            pager_view.insert(edit, 0, text)
-            pager_view.end_edit(edit)
-            self.view.window().run_command("show_panel", {"panel": "output.help"})
-        sublime.set_timeout(do, 0)
+        self.view.run_command('set_pager_text', {'text': text})
+        # def do():
+        #     pager_view = self.view.window().get_output_panel("help")
+        #     edit = pager_view.begin_edit()
+        #     pager_view.insert(edit, 0, text)
+        #     pager_view.end_edit(edit)
+        #     self.view.window().run_command("show_panel", {"panel": "output.help"})
+        # sublime.set_timeout(do, 0)
 
     def move_to_cell(self, up):
         cell_index = self.get_current_cell_index()
@@ -606,6 +606,14 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
         manager.create_nb_view(view, self.nbs[picked], self.baseurl)
 
         view.run_command("inb_render_notebook")
+
+class SetPagerTextCommand(sublime_plugin.TextCommand):
+    """command to set the text in the pop-up pager"""
+    def run(self, edit, text):
+        nbview = manager.get_nb_view(self.view)
+        pager_view = self.view.window().get_output_panel("help")
+        pager_view.insert(edit, 0, text)
+        self.view.window().run_command("show_panel", {"panel": "output.help"})
 
 
 class InbRestartKernelCommand(sublime_plugin.TextCommand):
