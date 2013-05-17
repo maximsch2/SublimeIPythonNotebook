@@ -5,17 +5,18 @@
 
 import json
 import uuid
-import thread
-import urllib2
+import _thread
+import urllib.request, urllib.error, urllib.parse
 from time import sleep
 import threading
-import Queue
+import queue
 from collections import defaultdict
 
 import re
 
-from external import nbformat
-from external import websocket
+from SublimeIPythonNotebook.external import nbformat2 as nbformat
+from SublimeIPythonNotebook.external.websocket import websocket3 as websocket
+from SublimeIPythonNotebook.external.websocket.websocket3 import *
 
 
 def create_uid():
@@ -199,12 +200,13 @@ class Kernel(object):
         self.shell_messages = []
         self.iopub_messages = []
         self.running = False
-        self.message_queue = Queue.Queue()
+        self.message_queue = queue.Queue()
         self.message_callbacks = dict()
         self.start_kernel()
-        thread.start_new_thread(self.process_messages, ())
+        _thread.start_new_thread(self.process_messages, ())
         self.status_callback = None
         self.pager_callback = None
+        self.encoding = 'utf-8'
 
     @property
     def kernel_id(self):
@@ -223,32 +225,32 @@ class Kernel(object):
 
     def start_kernel(self):
         url = "http://" + self.baseurl + "/kernels?notebook=" + self.notebook_id
-        req = urllib2.urlopen(url, data="")  # data="" makes it POST request
+        req = urllib.request.urlopen(url, data=b"")  # data="" makes it POST request
         req.read()
 
     def restart_kernel(self):
         url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/restart"
-        req = urllib2.urlopen(url, data="")
+        req = urllib.request.urlopen(url, data=b"")
         req.read()
 
     def interrupt_kernel(self):
         url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/interrupt"
-        req = urllib2.urlopen(url, data="")
+        req = urllib.request.urlopen(url, data=b"")
         req.read()
 
     def get_notebook(self):
-        req = urllib2.urlopen(self.notebook_url)
-        return Notebook(req.read())
+        req = urllib.request.urlopen(self.notebook_url)
+        return Notebook(req.readall().decode(self.encoding))
 
     @property
     def notebook_url(self):
         return "http://" + self.baseurl + "/notebooks/" + self.notebook_id
 
     def save_notebook(self, notebook):
-        request = urllib2.Request(self.notebook_url, str(notebook))
+        request = urllib.request.Request(self.notebook_url, str(notebook))
         request.add_header("Content-Type", "application/json")
         request.get_method = lambda: "PUT"
-        data = urllib2.urlopen(request)
+        data = urllib.request.urlopen(request)
         data.read()
 
     def on_iopub_msg(self, msg):
@@ -281,7 +283,7 @@ class Kernel(object):
             try:
                 parent_id = m["parent_header"]["msg_id"]
             except:
-                print("No 'parent_header' in the message: " + str(m))
+                print(("No 'parent_header' in the message: " + str(m)))
                 continue
             content = m["content"]
             msg_type = m["header"]["msg_type"]
@@ -326,15 +328,15 @@ class Kernel(object):
 
     def create_websockets(self):
         url = "ws://" + self.baseurl + "/kernels/" + self.kernel_id + "/"
-        self.shell = websocket.WebSocketApp(url=url+"shell",
+        self.shell = websocket.WebSocketApp(url=url + "shell",
                                             on_message=lambda ws, msg: self.on_shell_msg(msg),
-                                            on_open=lambda ws: ws.send(""))
+                                            on_open=lambda ws: ws.send("hallo_shell"))
         self.iopub = websocket.WebSocketApp(url=url + "iopub",
                                             on_message=lambda ws, msg: self.on_iopub_msg(msg),
                                             on_open=lambda ws: ws.send(""))
 
-        thread.start_new_thread(self.shell.run_forever, ())
-        thread.start_new_thread(self.iopub.run_forever, ())
+        _thread.start_new_thread(self.shell.run_forever, ())
+        _thread.start_new_thread(self.iopub.run_forever, ())
         sleep(2)
         self.running = True
 
