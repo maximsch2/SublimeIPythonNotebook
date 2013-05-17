@@ -104,8 +104,8 @@ class CodeCellView(BaseCellView):
 
     def run(self, kernel):
         if self.running:
-            print "Warning"
-            print "Cell is already running"
+            print("Warning")
+            print("Cell is already running")
             return
 
         self.running = True
@@ -188,7 +188,7 @@ class CodeCellView(BaseCellView):
 
 class TextCell(BaseCellView):
     def run(self, kernel):
-        print "Cannot run Markdown cell"
+        print("Cannot run Markdown cell")
 
     def get_cell_title(self):
         if self.cell.cell_type == "markdown":
@@ -198,7 +198,7 @@ class TextCell(BaseCellView):
         elif self.cell.cell_type == "heading":
             return "Heading"
         else:
-            print "Unknwon cell type: " + str(self.cell.cell_type)
+            print("Unknwon cell type: " + str(self.cell.cell_type))
             return "Unknown"
 
     def setup(self, edit):
@@ -366,7 +366,7 @@ class NotebookView(object):
         self.view.erase_regions("inb_cells")
         self.view.erase_regions("inb_input")
         self.view.erase_regions("inb_output")
-        for i in xrange(self.notebook.cell_count):
+        for i in range(self.notebook.cell_count):
             self.insert_cell_field(edit, i)
             cell = self.notebook.get_cell(i)
             cell_view = self.create_cell_view(i, self.view, cell)
