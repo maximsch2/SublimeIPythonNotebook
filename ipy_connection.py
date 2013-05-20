@@ -14,7 +14,7 @@ from collections import defaultdict
 
 import re
 
-from SublimeIPythonNotebook.external import nbformat2 as nbformat
+from SublimeIPythonNotebook.external import nbformat3 as nbformat
 from SublimeIPythonNotebook.external.websocket import websocket3 as websocket
 from SublimeIPythonNotebook.external.websocket.websocket3 import *
 
