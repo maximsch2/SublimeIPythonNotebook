@@ -326,7 +326,7 @@ class NotebookView(object):
 
         self.add_cell(edit, start=pos)
 
-    def run_cell(self, edit):
+    def run_cell(self, edit, inplace):
         cell_index = self.get_current_cell_index()
         if cell_index < 0:
             return
@@ -334,10 +334,12 @@ class NotebookView(object):
         cell = self.get_cell_by_index(cell_index)
         if not cell:
             raise Exception("Cell not found")
-        if cell_index == len(self.cells) - 1:
-            self.insert_cell_at_position(edit, cell_index + 1)
+        if not inplace:
+            if cell_index == len(self.cells) - 1:
+                self.insert_cell_at_position(edit, cell_index + 1)
         cell.run(self.kernel)
-        self.move_to_cell(False)
+        if not inplace:
+            self.move_to_cell(False)
 
     def get_cell_by_index(self, cell_index):
         res = self.cells[cell_index]
@@ -659,10 +661,10 @@ class InbInsertOutputCommand(sublime_plugin.TextCommand):
 
 
 class InbRunInNotebookCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def run(self, edit, inplace):
         nbview = manager.get_nb_view(self.view)
         if nbview:
-            nbview.run_cell(edit)
+            nbview.run_cell(edit, inplace)
 
 
 class InbDeleteCurrentCellCommand(sublime_plugin.TextCommand):

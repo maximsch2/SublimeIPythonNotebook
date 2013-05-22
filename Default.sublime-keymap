@@ -1,7 +1,11 @@
 [  
     { 
-    	"keys": ["shift+enter"], "command": "inb_run_in_notebook",
+    	"keys": ["shift+enter"], "command": "inb_run_in_notebook", "args": {"inplace" : false},
     	"context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]  
+    },
+    { 
+        "keys": ["ctrl+enter"], "command": "inb_run_in_notebook", "args": {"inplace" : true},
+        "context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]  
     },
     { 
     	"keys": ["backspace"], "command": "inb_backspace", 
