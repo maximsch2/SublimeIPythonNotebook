@@ -13,10 +13,15 @@ import queue
 from collections import defaultdict
 
 import re
-
-from SublimeIPythonNotebook.external import nbformat3 as nbformat
-from SublimeIPythonNotebook.external.websocket import websocket3 as websocket
-from SublimeIPythonNotebook.external.websocket.websocket3 import *
+import sys
+if sys.version_info.major == 2:
+    from SublimeIPythonNotebook.external import nbformat as nbformat
+    from SublimeIPythonNotebook.external.websocket import websocket
+    from SublimeIPythonNotebook.external.websocket.websocket import *
+else:
+    from SublimeIPythonNotebook.external import nbformat3 as nbformat
+    from SublimeIPythonNotebook.external.websocket import websocket3 as websocket
+    from SublimeIPythonNotebook.external.websocket.websocket3 import *
 
 
 def create_uid():
