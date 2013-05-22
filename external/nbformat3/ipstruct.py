@@ -18,6 +18,8 @@ Authors:
 # Imports
 #-----------------------------------------------------------------------------
 
+from .data import list2dict2
+
 __all__ = ['Struct']
 
 #-----------------------------------------------------------------------------
@@ -368,7 +370,7 @@ class Struct(dict):
         add_s    = lambda old,new: old + ' ' + new
 
         # default policy is to keep current keys when there's a conflict
-        conflict_solve = dict.fromkeys(self, preserve)
+        conflict_solve = list2dict2(list(self.keys()), default = preserve)
 
         # the conflict_solve dictionary is given by the user 'inverted': we
         # need a name-function mapping, it comes as a function -> names
