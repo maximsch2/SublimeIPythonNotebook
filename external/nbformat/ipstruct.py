@@ -18,6 +18,8 @@ Authors:
 # Imports
 #-----------------------------------------------------------------------------
 
+from .data import list2dict2
+
 __all__ = ['Struct']
 
 #-----------------------------------------------------------------------------
@@ -82,7 +84,7 @@ class Struct(dict):
         ...
         this is not allowed
         """
-        if not self._allownew and key not in self:
+        if not self._allownew and not self.has_key(key):
             raise KeyError(
                 "can't create new attribute %s when allow_new_attr(False)" % key)
         dict.__setitem__(self, key, value)
@@ -119,7 +121,7 @@ class Struct(dict):
                 )
         try:
             self.__setitem__(key, value)
-        except KeyError as e:
+        except KeyError, e:
             raise AttributeError(e)
 
     def __getattr__(self, key):
@@ -210,7 +212,7 @@ class Struct(dict):
         {'b': 30}
         """
         for k in other.keys():
-            if k in self:
+            if self.has_key(k):
                 del self[k]
         return self
 
@@ -260,7 +262,7 @@ class Struct(dict):
         >>> s.hasattr('get')
         False
         """
-        return key in self
+        return self.has_key(key)
 
     def allow_new_attr(self, allow = True):
         """Set whether new attributes can be created in this Struct.
@@ -368,7 +370,7 @@ class Struct(dict):
         add_s    = lambda old,new: old + ' ' + new
 
         # default policy is to keep current keys when there's a conflict
-        conflict_solve = dict.fromkeys(self, preserve)
+        conflict_solve = list2dict2(self.keys(), default = preserve)
 
         # the conflict_solve dictionary is given by the user 'inverted': we
         # need a name-function mapping, it comes as a function -> names
