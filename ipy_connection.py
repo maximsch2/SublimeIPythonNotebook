@@ -362,7 +362,8 @@ class Kernel(object):
         matches = []
 
         def callback(msg_id, content):
-            matches[:] = content["matches"][:]
+            if "matches" in content:
+                matches[:] = content["matches"][:]
             ev.set()
         callbacks = {"complete_reply": callback}
         self.message_callbacks[msg_id] = callbacks

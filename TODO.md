@@ -27,12 +27,5 @@ Traceback (most recent call last):
     raise URLError(err)
 urllib2.URLError: <urlopen error [Errno 61] Connection refused>
 Unhandled exception in thread started by <bound method Kernel.process_messages of <ipy_connection.Kernel object at 0x10d694a50>>
-Traceback (most recent call last):
-  File "./ipy_connection.py", line 308, in process_messages
-    cb(msg_type, content)
-  File "./ipy_connection.py", line 365, in callback
-    matches[:] = content["matches"][:]
-KeyError: 'matches'
-
 
 Completion for directories works bad
