@@ -8,6 +8,7 @@ While the plugin looks stable so far and I am trying to preserve as much of the 
 1. Connect to the notebook server using "Open IPython Notebook" command. Choose a notebook you want to open and it will open in a separate buffer.
 2. I am trying to support keyboard shortcuts from the web version of the notebook. Currently you can use:
     - shift+enter - execute current cell
+    - ctrl+enter - execute current cell inplace
     - ctrl+m, d - delete current cell
     - ctrl+m, a - add cell above current
     - ctrl+m, b - add cell below current
