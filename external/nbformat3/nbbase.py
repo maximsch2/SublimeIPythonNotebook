@@ -53,11 +53,17 @@ def from_dict(d):
 def new_output(output_type=None, output_text=None, output_png=None,
     output_html=None, output_svg=None, output_latex=None, output_json=None,
     output_javascript=None, output_jpeg=None, prompt_number=None,
-    etype=None, evalue=None, traceback=None):
+    ename=None, evalue=None, traceback=None, stream=None, metadata=None):
     """Create a new code cell with input and output"""
     output = NotebookNode()
     if output_type is not None:
         output.output_type = str(output_type)
+
+    if metadata is None:
+        metadata = {}
+    if not isinstance(metadata, dict):
+        raise TypeError("metadata must be dict")
+    output.metadata = metadata
 
     if output_type != 'pyerr':
         if output_text is not None:
@@ -82,13 +88,16 @@ def new_output(output_type=None, output_text=None, output_png=None,
             output.prompt_number = int(prompt_number)
 
     if output_type == 'pyerr':
-        if etype is not None:
-            output.etype = str(etype)
+        if ename is not None:
+            output.ename = str(ename)
         if evalue is not None:
             output.evalue = str(evalue)
         if traceback is not None:
             output.traceback = [str(frame) for frame in list(traceback)]
 
+    if output_type == 'stream':
+        output.stream = 'stdout' if stream is None else str(stream)
+    
     return output
 
 
