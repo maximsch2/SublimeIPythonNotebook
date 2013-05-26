@@ -5,23 +5,34 @@
 
 import json
 import uuid
-import _thread
-import urllib.request, urllib.error, urllib.parse
+
 from time import sleep
 import threading
-import queue
+try:
+    import queue
+except ImportError:
+    import Queue as queue
+
 from collections import defaultdict
 
 import re
 import sys
-if sys.version_info.major == 2:
-    from SublimeIPythonNotebook.external import nbformat as nbformat
-    from SublimeIPythonNotebook.external.websocket import websocket
-    from SublimeIPythonNotebook.external.websocket.websocket import *
+if sys.version_info[0] == 2:
+    import thread as _thread
+    from external import nbformat as nbformat
+    from external.websocket import websocket
+    from external.websocket.websocket import *
+    from urlparse import urlparse
+    from urllib2 import urlopen
+    from urllib2 import Request
 else:
+    import _thread
     from SublimeIPythonNotebook.external import nbformat3 as nbformat
     from SublimeIPythonNotebook.external.websocket import websocket3 as websocket
     from SublimeIPythonNotebook.external.websocket.websocket3 import *
+    from urllib.request import urlopen, Request
+    from urllib.parse import urlparse
+
 
 
 def create_uid():
@@ -29,9 +40,13 @@ def create_uid():
 
 
 def get_notebooks(baseurl):
-    req = urllib.request.urlopen("http://" + baseurl + "/notebooks")
-    encoding = req.headers.get_content_charset()
-    body = req.readall().decode(encoding)
+    req = urlopen("http://" + baseurl + "/notebooks")
+    try:
+        encoding = req.headers.get_content_charset()
+        body = req.readall().decode(encoding)
+    except AttributeError:
+        encoding = req.headers.getparam('charset')
+        body = req.read()
     data = json.loads(body)
     return data
 
@@ -232,32 +247,35 @@ class Kernel(object):
 
     def start_kernel(self):
         url = "http://" + self.baseurl + "/kernels?notebook=" + self.notebook_id
-        req = urllib.request.urlopen(url, data=b"")  # data="" makes it POST request
+        req = urlopen(url, data=b"")  # data="" makes it POST request
         req.read()
 
     def restart_kernel(self):
         url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/restart"
-        req = urllib.request.urlopen(url, data=b"")
+        req = urlopen(url, data=b"")
         req.read()
 
     def interrupt_kernel(self):
         url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/interrupt"
-        req = urllib.request.urlopen(url, data=b"")
+        req = urlopen(url, data=bytearray(b""))
         req.read()
 
     def get_notebook(self):
-        req = urllib.request.urlopen(self.notebook_url)
-        return Notebook(req.readall().decode(self.encoding))
+        req = urlopen(self.notebook_url)
+        try:
+            return Notebook(req.readall().decode(self.encoding))
+        except AttributeError:
+            return Notebook(req.read())
 
     @property
     def notebook_url(self):
         return "http://" + self.baseurl + "/notebooks/" + self.notebook_id
 
     def save_notebook(self, notebook):
-        request = urllib.request.Request(self.notebook_url, str(notebook).encode(self.encoding))
+        request = Request(self.notebook_url, str(notebook).encode(self.encoding))
         request.add_header("Content-Type", "application/json")
         request.get_method = lambda: "PUT"
-        data = urllib.request.urlopen(request)
+        data = urlopen(request)
         data.read()
 
     def on_iopub_msg(self, msg):

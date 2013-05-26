@@ -5,7 +5,10 @@
 
 import sublime
 import sublime_plugin
-from SublimeIPythonNotebook import ipy_connection
+try:
+    from SublimeIPythonNotebook import ipy_connection
+except ImportError:
+    import ipy_connection
 import re
 
 
@@ -158,11 +161,13 @@ class CodeCellView(BaseCellView):
                     self.nbview.on_pager(p["text"])
 
     def update_prompt_number(self):
-        # def do_set():
-        #     mtc = MyTextCommand(self, self.view)
-        #     mtc.run()
-        self.view.run_command('rewrite_prompt_number')
-        # sublime.set_timeout(do_set, 0)
+        def do_set():
+            self.view.run_command('rewrite_prompt_number')
+
+        try:
+            self.view.run_command('rewrite_prompt_number')
+        except:
+            sublime.set_timeout(do_set, 0)
 
     def output_result(self, edit):
         self.write_to_region(edit, "inb_output", self.cell.output)
