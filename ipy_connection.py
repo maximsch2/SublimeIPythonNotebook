@@ -5,17 +5,34 @@
 
 import json
 import uuid
-import thread
-import urllib2
+
 from time import sleep
 import threading
-import Queue
+try:
+    import queue
+except ImportError:
+    import Queue as queue
+
 from collections import defaultdict
 
 import re
+import sys
+if sys.version_info[0] == 2:
+    import thread as _thread
+    from external import nbformat as nbformat
+    from external.websocket import websocket
+    from external.websocket.websocket import *
+    from urlparse import urlparse
+    from urllib2 import urlopen
+    from urllib2 import Request
+else:
+    import _thread
+    from SublimeIPythonNotebook.external import nbformat3 as nbformat
+    from SublimeIPythonNotebook.external.websocket import websocket3 as websocket
+    from SublimeIPythonNotebook.external.websocket.websocket3 import *
+    from urllib.request import urlopen, Request
+    from urllib.parse import urlparse
 
-from external import nbformat
-from external import websocket
 
 
 def create_uid():
@@ -23,8 +40,14 @@ def create_uid():
 
 
 def get_notebooks(baseurl):
-    req = urllib2.urlopen("http://" + baseurl + "/notebooks")
-    data = json.loads(req.read())
+    req = urlopen("http://" + baseurl + "/notebooks")
+    try:
+        encoding = req.headers.get_content_charset()
+        body = req.readall().decode(encoding)
+    except AttributeError:
+        encoding = req.headers.getparam('charset')
+        body = req.read()
+    data = json.loads(body)
     return data
 
 
@@ -199,12 +222,13 @@ class Kernel(object):
         self.shell_messages = []
         self.iopub_messages = []
         self.running = False
-        self.message_queue = Queue.Queue()
+        self.message_queue = queue.Queue()
         self.message_callbacks = dict()
         self.start_kernel()
-        thread.start_new_thread(self.process_messages, ())
+        _thread.start_new_thread(self.process_messages, ())
         self.status_callback = None
         self.pager_callback = None
+        self.encoding = 'utf-8'
 
     @property
     def kernel_id(self):
@@ -223,32 +247,35 @@ class Kernel(object):
 
     def start_kernel(self):
         url = "http://" + self.baseurl + "/kernels?notebook=" + self.notebook_id
-        req = urllib2.urlopen(url, data="")  # data="" makes it POST request
+        req = urlopen(url, data=b"")  # data="" makes it POST request
         req.read()
 
     def restart_kernel(self):
         url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/restart"
-        req = urllib2.urlopen(url, data="")
+        req = urlopen(url, data=b"")
         req.read()
 
     def interrupt_kernel(self):
         url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/interrupt"
-        req = urllib2.urlopen(url, data="")
+        req = urlopen(url, data=bytearray(b""))
         req.read()
 
     def get_notebook(self):
-        req = urllib2.urlopen(self.notebook_url)
-        return Notebook(req.read())
+        req = urlopen(self.notebook_url)
+        try:
+            return Notebook(req.readall().decode(self.encoding))
+        except AttributeError:
+            return Notebook(req.read())
 
     @property
     def notebook_url(self):
         return "http://" + self.baseurl + "/notebooks/" + self.notebook_id
 
     def save_notebook(self, notebook):
-        request = urllib2.Request(self.notebook_url, str(notebook))
+        request = Request(self.notebook_url, str(notebook).encode(self.encoding))
         request.add_header("Content-Type", "application/json")
         request.get_method = lambda: "PUT"
-        data = urllib2.urlopen(request)
+        data = urlopen(request)
         data.read()
 
     def on_iopub_msg(self, msg):
@@ -281,7 +308,7 @@ class Kernel(object):
             try:
                 parent_id = m["parent_header"]["msg_id"]
             except:
-                print("No 'parent_header' in the message: " + str(m))
+                print(("No 'parent_header' in the message: " + str(m)))
                 continue
             content = m["content"]
             msg_type = m["header"]["msg_type"]
@@ -326,15 +353,15 @@ class Kernel(object):
 
     def create_websockets(self):
         url = "ws://" + self.baseurl + "/kernels/" + self.kernel_id + "/"
-        self.shell = websocket.WebSocketApp(url=url+"shell",
+        self.shell = websocket.WebSocketApp(url=url + "shell",
                                             on_message=lambda ws, msg: self.on_shell_msg(msg),
-                                            on_open=lambda ws: ws.send(""))
+                                            on_open=lambda ws: ws.send("hallo_shell"))
         self.iopub = websocket.WebSocketApp(url=url + "iopub",
                                             on_message=lambda ws, msg: self.on_iopub_msg(msg),
                                             on_open=lambda ws: ws.send(""))
 
-        thread.start_new_thread(self.shell.run_forever, ())
-        thread.start_new_thread(self.iopub.run_forever, ())
+        _thread.start_new_thread(self.shell.run_forever, ())
+        _thread.start_new_thread(self.iopub.run_forever, ())
         sleep(2)
         self.running = True
 

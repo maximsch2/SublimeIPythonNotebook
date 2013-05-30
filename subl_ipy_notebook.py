@@ -5,7 +5,10 @@
 
 import sublime
 import sublime_plugin
-import ipy_connection
+try:
+    from SublimeIPythonNotebook import ipy_connection
+except ImportError:
+    import ipy_connection
 import re
 
 
@@ -104,8 +107,8 @@ class CodeCellView(BaseCellView):
 
     def run(self, kernel):
         if self.running:
-            print "Warning"
-            print "Cell is already running"
+            print("Warning")
+            print("Cell is already running")
             return
 
         self.running = True
@@ -159,17 +162,12 @@ class CodeCellView(BaseCellView):
 
     def update_prompt_number(self):
         def do_set():
-            edit = self.view.begin_edit()
-            try:
-                inp_reg = self.get_input_region()
-                line = self.view.line(inp_reg.begin() - 1)
-                self.view.replace(edit, line, "#Input[%s]" % self.prompt)
-                out_reg = self.get_region("inb_output")
-                line = self.view.line(out_reg.begin() - 1)
-                self.view.replace(edit, line, "#Output[%s]" % self.prompt)
-            finally:
-                self.view.end_edit(edit)
-        sublime.set_timeout(do_set, 0)
+            self.view.run_command('rewrite_prompt_number')
+
+        try:
+            self.view.run_command('rewrite_prompt_number')
+        except:
+            sublime.set_timeout(do_set, 0)
 
     def output_result(self, edit):
         self.write_to_region(edit, "inb_output", self.cell.output)
@@ -186,9 +184,25 @@ class CodeCellView(BaseCellView):
         self.cell.source = self.get_code()
 
 
+class RewritePromptNumberCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        nbview = manager.get_nb_view(self.view)
+        if not nbview:
+            raise Exception("Failed to get NBView")
+
+        cellidx = nbview.get_current_cell_index() - 1
+        cell = nbview.get_cell_by_index(cellidx)
+        inp_reg = cell.get_cell_region()
+        line = self.view.line(inp_reg.begin())
+        self.view.replace(edit, line, "#Input[%s]" % cell.prompt)
+        out_reg = cell.get_region("inb_output")
+        line = self.view.line(out_reg.begin() - 1)
+        self.view.replace(edit, line, "#Output[%s]" % cell.prompt)
+
+
 class TextCell(BaseCellView):
     def run(self, kernel):
-        print "Cannot run Markdown cell"
+        print("Cannot run Markdown cell")
 
     def get_cell_title(self):
         if self.cell.cell_type == "markdown":
@@ -198,7 +212,7 @@ class TextCell(BaseCellView):
         elif self.cell.cell_type == "heading":
             return "Heading"
         else:
-            print "Unknwon cell type: " + str(self.cell.cell_type)
+            print("Unknwon cell type: " + str(self.cell.cell_type))
             return "Unknown"
 
     def setup(self, edit):
@@ -368,7 +382,7 @@ class NotebookView(object):
         self.view.erase_regions("inb_cells")
         self.view.erase_regions("inb_input")
         self.view.erase_regions("inb_output")
-        for i in xrange(self.notebook.cell_count):
+        for i in range(self.notebook.cell_count):
             self.insert_cell_field(edit, i)
             cell = self.notebook.get_cell(i)
             cell_view = self.create_cell_view(i, self.view, cell)
@@ -523,14 +537,7 @@ class NotebookView(object):
 
     def on_pager(self, text):
         text = re.sub("\x1b[^m]*m", "", text)
-
-        def do():
-            pager_view = self.view.window().get_output_panel("help")
-            edit = pager_view.begin_edit()
-            pager_view.insert(edit, 0, text)
-            pager_view.end_edit(edit)
-            self.view.window().run_command("show_panel", {"panel": "output.help"})
-        sublime.set_timeout(do, 0)
+        self.view.run_command('set_pager_text', {'text': text})
 
     def move_to_cell(self, up):
         cell_index = self.get_current_cell_index()
@@ -598,6 +605,13 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
         manager.create_nb_view(view, self.nbs[picked], self.baseurl)
 
         view.run_command("inb_render_notebook")
+
+class SetPagerTextCommand(sublime_plugin.TextCommand):
+    """command to set the text in the pop-up pager"""
+    def run(self, edit, text):
+        pager_view = self.view.window().get_output_panel("help")
+        pager_view.insert(edit, 0, text)
+        self.view.window().run_command("show_panel", {"panel": "output.help"})
 
 
 class InbRestartKernelCommand(sublime_plugin.TextCommand):
@@ -730,10 +744,14 @@ class InbOpenAsIpynbCommand(sublime_plugin.WindowCommand):
         if nbview:
             s = str(nbview.notebook)
             new_view = self.window.new_file()
-            edit = new_view.begin_edit()
-            new_view.insert(edit, 0, s)
-            new_view.end_edit(edit)
+            # edit = new_view.begin_edit()
+            new_view.run_command('inb_insert_string', {'s': s})
+            # new_view.end_edit(edit)
             new_view.set_name(nbview.name + ".ipynb")
+
+class InbInsertStringCommand(sublime_plugin.TextCommand):
+    def run(self, edit, s):
+        self.view.insert(edit, 0, s)
 
 
 class InbMoveToCell(sublime_plugin.TextCommand):

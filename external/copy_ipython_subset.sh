@@ -20,3 +20,6 @@ sed -i bak "s/IPython.utils//" nbformat/nbbase.py
 sed -i bak "s/IPython.utils/./" nbformat/*.py
 rm -f nbformat/*.pybak
 
+cp nbformat/* nbformat3/
+2to3 -w nbformat3/*.py
+
