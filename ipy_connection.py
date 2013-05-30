@@ -40,15 +40,18 @@ def create_uid():
 
 
 def get_notebooks(baseurl):
-    req = urlopen("http://" + baseurl + "/notebooks")
     try:
-        encoding = req.headers.get_content_charset()
-        body = req.readall().decode(encoding)
-    except AttributeError:
-        encoding = req.headers.getparam('charset')
-        body = req.read()
-    data = json.loads(body)
-    return data
+        req = urlopen("http://" + baseurl + "/notebooks")
+        try:
+            encoding = req.headers.get_content_charset()
+            body = req.readall().decode(encoding)
+        except AttributeError:
+            encoding = req.headers.getparam('charset')
+            body = req.read()
+        data = json.loads(body)
+        return data
+    except:
+        return None
 
 
 def convert_mime_types(obj, content):

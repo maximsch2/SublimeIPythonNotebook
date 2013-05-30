@@ -601,6 +601,9 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
     def run(self, baseurl):
         self.baseurl = baseurl
         nbs = ipy_connection.get_notebooks(baseurl)
+        if nbs is None:
+            print ("Cannot get a list of notebooks")
+            return
         self.nbs = nbs
         lst = []
         for i, nb in enumerate(nbs):
