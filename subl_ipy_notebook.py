@@ -162,12 +162,21 @@ class CodeCellView(BaseCellView):
 
     def update_prompt_number(self):
         def do_set():
-            self.view.run_command('rewrite_prompt_number')
+            self.view.run_command('rewrite_prompt_number', {"cell_index": self.index})
 
         try:
-            self.view.run_command('rewrite_prompt_number')
+            self.view.run_command('rewrite_prompt_number', {"cell_index": self.index})
         except:
             sublime.set_timeout(do_set, 0)
+
+    def rewrite_prompt_number(self, edit):
+        inp_reg = self.get_cell_region()
+        line = self.view.line(inp_reg.begin())
+        self.view.replace(edit, line, "#Input[%s]" % self.prompt)
+        out_reg = self.get_region("inb_output")
+        line = self.view.line(out_reg.begin() - 1)
+        self.view.replace(edit, line, "#Output[%s]" % self.prompt)
+
 
     def output_result(self, edit):
         self.write_to_region(edit, "inb_output", self.cell.output)
@@ -185,19 +194,14 @@ class CodeCellView(BaseCellView):
 
 
 class RewritePromptNumberCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def run(self, edit, cell_index):
         nbview = manager.get_nb_view(self.view)
         if not nbview:
             raise Exception("Failed to get NBView")
 
-        cellidx = nbview.get_current_cell_index() - 1
-        cell = nbview.get_cell_by_index(cellidx)
-        inp_reg = cell.get_cell_region()
-        line = self.view.line(inp_reg.begin())
-        self.view.replace(edit, line, "#Input[%s]" % cell.prompt)
-        out_reg = cell.get_region("inb_output")
-        line = self.view.line(out_reg.begin() - 1)
-        self.view.replace(edit, line, "#Output[%s]" % cell.prompt)
+        cell = nbview.get_cell_by_index(cell_index)
+        if cell:
+            cell.rewrite_prompt_number(edit)
 
 
 class TextCell(BaseCellView):
@@ -537,7 +541,13 @@ class NotebookView(object):
 
     def on_pager(self, text):
         text = re.sub("\x1b[^m]*m", "", text)
-        self.view.run_command('set_pager_text', {'text': text})
+        def do_run():
+            self.view.run_command('set_pager_text', {'text': text})
+        try:
+            self.view.run_command('set_pager_text', {'text': text})
+        except:
+            sublime.set_timeout(do_run, 0)
+
 
     def move_to_cell(self, up):
         cell_index = self.get_current_cell_index()

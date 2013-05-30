@@ -22,3 +22,4 @@ While the plugin looks stable so far and I am trying to preserve as much of the 
 ## Notes
 1. You can use %pylab inline. You will not be able to see the plots, but they will be saved in the notebook and available when viewing it through the web interface.
 2. I am using websocket-client library from https://github.com/liris/websocket-client and (slightly patched) subset of the IPython. You do not have to install them separately. 
+3. ST3 port was contributed by [chirswl](https://github.com/chriswl)
