@@ -46,13 +46,32 @@ def get_notebooks(baseurl):
             encoding = req.headers.get_content_charset()
             body = req.readall().decode(encoding)
         except AttributeError:
-            encoding = req.headers.getparam('charset')
             body = req.read()
         data = json.loads(body)
         return data
     except:
         return None
 
+def create_new_notebook(baseurl):
+    try:
+        req = urlopen("http://" + baseurl + "/new")
+        try:
+            encoding = req.headers.get_content_charset()
+            body = req.readall().decode(encoding)
+        except AttributeError:
+            encoding = req.headers.getparam('charset')
+            body = req.read()
+        import re
+        match =  re.search("data-notebook-id=(.*)", body)
+        nbid = match.groups()[0]
+        return nbid
+    except Exception, e:
+        raise
+    else:
+        pass
+    finally:
+        pass
+    return None
 
 def convert_mime_types(obj, content):
     if not content:
@@ -88,6 +107,9 @@ def convert_mime_types(obj, content):
 class Notebook(object):
     def __init__(self, s):
         self._notebook = nbformat.reads_json(s)
+        if len(self._notebook.worksheets) == 0:
+             # probably have an empty notebook, create a worksheet
+            self._notebook.worksheets.append(nbformat.new_worksheet(cells = [nbformat.new_code_cell(input="")]))
         self._cells = self._notebook.worksheets[0].cells
         self.notebook_view = None
 
@@ -114,6 +136,16 @@ class Notebook(object):
 
     def delete_cell(self, cell_index):
         del self._cells[cell_index]
+
+    def name():
+        doc = "The name property."
+
+        def fget(self):
+            return self._notebook.metadata.name
+        def fset(self, value):
+            self._notebook.metadata.name = value
+        return locals()
+    name = property(**name())
 
 
 MAX_OUTPUT_SIZE = 5000

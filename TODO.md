@@ -1,7 +1,5 @@
-- Opening empty new notebooks doesn't work. Should also support creating new notebooks from ST
 - Support set_next_input
 - Correctly handle 'dead' message from the kernel
-- Add support for creating/renaming notebooks
 - Add an option of saving a backup copy of notebook json file (use git to have all copies?):
     - For now it is possible to use inb_open_as_ipynb command
 - Use scopes to highlight python code only inside input cells

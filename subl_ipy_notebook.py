@@ -12,6 +12,7 @@ except ImportError:
 import re
 
 
+
 def create_kernel(baseurl, notebook_id):
     return ipy_connection.Kernel(notebook_id, baseurl)
 
@@ -254,21 +255,26 @@ class TextCell(BaseCellView):
 
 
 class NotebookView(object):
-    def __init__(self, view, notebook_id, notebook_name, baseurl):
+    def __init__(self, view, notebook_id, baseurl):
         self.view = view
         self.baseurl = baseurl
-        self.name = notebook_name
-        view.set_name("IPy Notebook - " + notebook_name)
         view.set_scratch(True)
         view.set_syntax_file("Packages/Python/Python.tmLanguage")
         view.settings().set("ipython_notebook", True)
         self.cells = []
         self.notebook_id = notebook_id
-        self.name = notebook_name
         self.kernel = create_kernel(baseurl, notebook_id)
         self.kernel.status_callback = self.on_status
         self.on_status({"execution_state": "idle"})
         self.notebook = self.kernel.get_notebook()
+        view.set_name("IPy Notebook - " + self.notebook.name)
+
+    def get_name(self):
+        return self.notebook.name
+
+    def set_name(self, new_name):
+        self.notebook.name = new_name
+        view.set_name("IPy Notebook - " + self.notebook.name)
 
     def get_cell_separator(self):
         return "-"*120
@@ -397,6 +403,9 @@ class NotebookView(object):
 
         for cell in self.cells:
             cell.draw(edit)
+        
+        if len(nbview.cells > 0):
+            nbview.cells[0].select()
 
     def update_notebook_from_buffer(self):
         for cell in self.cells:
@@ -564,9 +573,9 @@ class NotebookViewManager(object):
     def __init__(self):
         self.views = {}
 
-    def create_nb_view(self, view, nb, baseurl):
+    def create_nb_view(self, view, notebook_id, baseurl):
         id = view.id()
-        nbview = NotebookView(view, nb["notebook_id"], nb["name"], baseurl)
+        nbview = NotebookView(view, notebook_id, baseurl)
         self.views[id] = nbview
         return nbview
 
@@ -605,9 +614,10 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
             print ("Cannot get a list of notebooks")
             return
         self.nbs = nbs
-        lst = []
+        lst = ["0: Create New Notebook\n"]
         for i, nb in enumerate(nbs):
-            lst.append(str(i) + ":  " + nb["name"] + "\n")
+            lst.append(str(i+1) + ":  " + nb["name"] + "\n")
+
         self.window.show_quick_panel(lst, self.on_done)
 
     def on_done(self, picked):
@@ -615,9 +625,16 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
             return
 
         view = self.window.new_file()
-        manager.create_nb_view(view, self.nbs[picked], self.baseurl)
+        if picked > 0:
+            manager.create_nb_view(view, self.nbs[picked-1]["notebook_id"], self.baseurl)
+        else:
+            new_nb_id = ipy_connection.create_new_notebook(self.baseurl)
+            if new_nb_id is None:
+                return
+            manager.create_nb_view(view, new_nb_id, self.baseurl)
 
         view.run_command("inb_render_notebook")
+
 
 class SetPagerTextCommand(sublime_plugin.TextCommand):
     """command to set the text in the pop-up pager"""
@@ -779,3 +796,14 @@ class InbChangeCellTypeCommand(sublime_plugin.TextCommand):
         nbview = manager.get_nb_view(self.view)
         if nbview:
             nbview.change_current_cell_type(edit, new_type)
+
+class InbRenameNotebookCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        nbview = manager.get_nb_view(self.view)
+        if nbview:
+            self.nbview = nbview
+            sublime.active_window().show_input_panel("Notebook name", nbview.get_name(),
+                                                            self.on_done, None, None)
+
+    def on_done(self, line):
+        self.nbview.set_name(line)
