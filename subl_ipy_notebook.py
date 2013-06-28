@@ -101,6 +101,8 @@ class CodeCellView(BaseCellView):
         self.running = False
         self.nbview = nbview
         self.owned_regions.append("inb_output")
+        self.old_is_R = self.is_R_cell()
+        self.old_prompt_number = -1
 
     @property
     def prompt(self):
@@ -182,13 +184,24 @@ class CodeCellView(BaseCellView):
             code = self.cell.source
         return (len(code) >= 3) and (code[:3] == '%%R')
 
+    def check_R(self):
+    	if self.old_is_R != self.is_R_cell():
+    		self.update_prompt_number()
+
     def rewrite_prompt_number(self, edit):
+        if (self.prompt == self.old_prompt_number) and (self.old_is_R == self.is_R_cell()):
+            return
+
+        self.old_prompt_number = self.prompt
+        self.old_is_R = self.is_R_cell()
+
         inp_reg = self.get_cell_region()
         line = self.view.line(inp_reg.begin())
         self.view.replace(edit, line, self.get_input_prompt() % self.prompt)
         out_reg = self.get_region("inb_output")
         line = self.view.line(out_reg.begin() - 1)
         self.view.replace(edit, line, "#Output[%s]" % self.prompt)
+        
 
 
     def output_result(self, edit):
@@ -304,6 +317,7 @@ class NotebookView(object):
                 if reg.contains(s):
                     if first_cell_index < 0:
                         first_cell_index = i
+                    self.cells[i].check_R()
                     readonly = False
                     break
             if readonly:
