@@ -65,12 +65,8 @@ def create_new_notebook(baseurl):
         match =  re.search("data-notebook-id=(.*)", body)
         nbid = match.groups()[0]
         return nbid
-    except Exception, e:
+    except :
         raise
-    else:
-        pass
-    finally:
-        pass
     return None
 
 def convert_mime_types(obj, content):

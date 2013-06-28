@@ -259,7 +259,8 @@ class NotebookView(object):
         self.view = view
         self.baseurl = baseurl
         view.set_scratch(True)
-        view.set_syntax_file("Packages/Python/Python.tmLanguage")
+        #view.set_syntax_file("Packages/Python/Python.tmLanguage")
+        view.set_syntax_file("Packages/SublimeIPythonNotebook/SublimeIPythonNotebook.tmLanguage")
         view.settings().set("ipython_notebook", True)
         self.cells = []
         self.notebook_id = notebook_id
@@ -404,8 +405,8 @@ class NotebookView(object):
         for cell in self.cells:
             cell.draw(edit)
         
-        if len(nbview.cells > 0):
-            nbview.cells[0].select()
+        if len(self.cells) > 0:
+            self.cells[0].select()
 
     def update_notebook_from_buffer(self):
         for cell in self.cells:
