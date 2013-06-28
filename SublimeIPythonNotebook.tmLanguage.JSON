@@ -1,63 +1,41 @@
 { 
-   "name": "IPython Notebook",
+  "name": "IPython Notebook",
   "scopeName": "source.ipynb",
   "fileTypes": ["ipynb"],
   "patterns": [
-  	    { "match": "Input\\[.*\\]",
-          "name": "keyword.source.python",
-          "comment": "Beginning of cell input"
-        },
+  	    // { 
+       //    "match": "Input\\[.*\\]",
+       //    "name": "keyword.source.python",
+       //    "comment": "Beginning of cell input"
+       //  },
 
          { 
-          "name": "ipynb.source.input",
-          "begin": "\\#Input\\[.*\\]",
+          "name": "ipynb.source.input.r",
+          "begin": "\\#Input-R\\[.*\\]",
            "end": "\\#\\/Input",
            "patterns": [
                 {
-                  "name": "ipynb.source.input.r",
-                  "begin" : "%%R",
-                  "end" : "\\z",
-                  "patterns" : [
-                     {
-                    "include" : "source.r"
-                      }
-                    ]
-                },
-                {
-                  //"name" : "ipynb.source.input.python",
-                  "include": "source.python"
+                  "include": "source.r"
                 },
            ]
         },
 
-        // { "name": "ipynb.source.input.python",
-        //   "begin": "\\#Input\\[.*\\]",
-        //   // "beginCaptures": {
-        //   //     "1": { "name": "keyword.ssraw" },
-        //   //     "3": { "name": "constant.numeric.ssraw" }
-        //   //  },
-        //    "patterns": [
-        //       { 
-        //       	"include": "source.python" 
-        //       },
-        //    ],
-        //    "end": "\\#\\/Input"
-        // },
+        { 
+          "name": "ipynb.source.input.python",
+          "begin": "\\#Input\\[.*\\]",
+           "patterns": [
+              { 
+              	"include": "source.python" 
+              },
+           ],
+           "end": "\\#\\/Input"
+        },
 
-        { "name": "ipynb.source.output",
+        { 
+          "name": "ipynb.source.output",
           "begin": "\\#Output\\[.*\\]",
-          // "beginCaptures": {
-          //     "1": { "name": "keyword.ssraw" },
-          //     "3": { "name": "constant.numeric.ssraw" }
-          //  },
-           // "patterns": [
-           //    { "include": "$self" },
-           //    { "name": "string.ssraw",
-           //      "match": "."
-           //    }
-           // ],
            "end": "\\#\\/Output"
         },
   ],
-  "uuid": "ca03e733-04ef-4330-9a6b-9b99aae1c418"
+  "uuid": "a09ea990-df95-11e2-a28f-0800200c9a66"
 }

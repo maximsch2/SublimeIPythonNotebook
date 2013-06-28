@@ -11,12 +11,19 @@
 	<key>patterns</key>
 	<array>
 		<dict>
-			<key>comment</key>
-			<string>Beginning of cell input</string>
-			<key>match</key>
-			<string>Input\[.*\]</string>
+			<key>begin</key>
+			<string>\#Input-R\[.*\]</string>
+			<key>end</key>
+			<string>\#\/Input</string>
 			<key>name</key>
-			<string>keyword.source.python</string>
+			<string>ipynb.source.input.r</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>source.r</string>
+				</dict>
+			</array>
 		</dict>
 		<dict>
 			<key>begin</key>
@@ -24,24 +31,9 @@
 			<key>end</key>
 			<string>\#\/Input</string>
 			<key>name</key>
-			<string>ipynb.source.input</string>
+			<string>ipynb.source.input.python</string>
 			<key>patterns</key>
 			<array>
-				<dict>
-					<key>begin</key>
-					<string>%%R</string>
-					<key>end</key>
-					<string>\z</string>
-					<key>name</key>
-					<string>ipynb.source.input.r</string>
-					<key>patterns</key>
-					<array>
-						<dict>
-							<key>include</key>
-							<string>source.r</string>
-						</dict>
-					</array>
-				</dict>
 				<dict>
 					<key>include</key>
 					<string>source.python</string>
@@ -60,6 +52,6 @@
 	<key>scopeName</key>
 	<string>source.ipynb</string>
 	<key>uuid</key>
-	<string>ca03e733-04ef-4330-9a6b-9b99aae1c418</string>
+	<string>a09ea990-df95-11e2-a28f-0800200c9a66</string>
 </dict>
 </plist>

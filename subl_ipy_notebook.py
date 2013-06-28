@@ -126,7 +126,7 @@ class CodeCellView(BaseCellView):
 
         self.view.set_read_only(False)
 
-        start = start + view.insert(edit, start, "#Input[%s]" % self.prompt)
+        start = start + view.insert(edit, start, self.get_input_prompt() % self.prompt)
         end = start + view.insert(edit, start, "\n\n")
 
         reg = sublime.Region(start, end)
@@ -170,10 +170,22 @@ class CodeCellView(BaseCellView):
         except:
             sublime.set_timeout(do_set, 0)
 
+    def get_input_prompt(self):
+        if self.is_R_cell():
+            return "#Input-R[%s]"
+        else:
+            return "#Input[%s]"
+
+    def is_R_cell(self):
+        code = self.get_input_content()
+        if code == "":
+            code = self.cell.source
+        return (len(code) >= 3) and (code[:3] == '%%R')
+
     def rewrite_prompt_number(self, edit):
         inp_reg = self.get_cell_region()
         line = self.view.line(inp_reg.begin())
-        self.view.replace(edit, line, "#Input[%s]" % self.prompt)
+        self.view.replace(edit, line, self.get_input_prompt() % self.prompt)
         out_reg = self.get_region("inb_output")
         line = self.view.line(out_reg.begin() - 1)
         self.view.replace(edit, line, "#Output[%s]" % self.prompt)
