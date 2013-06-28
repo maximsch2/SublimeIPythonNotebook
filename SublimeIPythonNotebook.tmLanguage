@@ -13,8 +13,24 @@
 		<dict>
 			<key>begin</key>
 			<string>\#Input-R\[.*\]</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>comment</string>
+				</dict>
+			</dict>
 			<key>end</key>
 			<string>\#\/Input</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>comment</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>ipynb.source.input.r</string>
 			<key>patterns</key>
@@ -28,8 +44,24 @@
 		<dict>
 			<key>begin</key>
 			<string>\#Input\[.*\]</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>comment</string>
+				</dict>
+			</dict>
 			<key>end</key>
 			<string>\#\/Input</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>comment</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>ipynb.source.input.python</string>
 			<key>patterns</key>
@@ -43,10 +75,32 @@
 		<dict>
 			<key>begin</key>
 			<string>\#Output\[.*\]</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>comment</string>
+				</dict>
+			</dict>
 			<key>end</key>
 			<string>\#\/Output</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>comment</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>ipynb.source.output</string>
+		</dict>
+		<dict>
+			<key>match</key>
+			<string>=*</string>
+			<key>name</key>
+			<string>keyword</string>
 		</dict>
 	</array>
 	<key>scopeName</key>

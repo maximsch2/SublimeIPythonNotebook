@@ -9,10 +9,17 @@
        //    "comment": "Beginning of cell input"
        //  },
 
-         { 
-          "name": "ipynb.source.input.r",
-          "begin": "\\#Input-R\\[.*\\]",
+         {
+
+           "name": "ipynb.source.input.r",
+           "begin": "\\#Input-R\\[.*\\]",
            "end": "\\#\\/Input",
+           "beginCaptures": {
+              "0": { "name": "comment"}
+            },
+           "endCaptures": {
+              "0": { "name": "comment"}
+            },
            "patterns": [
                 {
                   "include": "source.r"
@@ -28,13 +35,31 @@
               	"include": "source.python" 
               },
            ],
-           "end": "\\#\\/Input"
+           "end": "\\#\\/Input",
+           "beginCaptures": {
+              "0": { "name": "comment"}
+            },
+           "endCaptures": {
+              "0": { "name": "comment"}
+            },
+
         },
 
         { 
           "name": "ipynb.source.output",
           "begin": "\\#Output\\[.*\\]",
-           "end": "\\#\\/Output"
+           "end": "\\#\\/Output",
+           "beginCaptures": {
+              "0": { "name": "comment"}
+            },
+           "endCaptures": {
+              "0": { "name": "comment"}
+            },
+
+        },
+        {
+          "name": "keyword",
+          "match": "=*"
         },
   ],
   "uuid": "a09ea990-df95-11e2-a28f-0800200c9a66"

@@ -290,7 +290,7 @@ class NotebookView(object):
         view.set_name("IPy Notebook - " + self.notebook.name)
 
     def get_cell_separator(self):
-        return "-"*120
+        return "="*120
 
     def on_modified(self):
         readonly = True
