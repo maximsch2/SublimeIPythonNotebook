@@ -5,4 +5,4 @@
 - Use scopes to highlight python code only inside input cells
 - Put feedback from the notebook in status bar (on save etc.)
 - Completion on file names and directories should work better
-- There is a problem with read-only detection when editing several cells with multiple-cursor
+- Support image preview in some external program

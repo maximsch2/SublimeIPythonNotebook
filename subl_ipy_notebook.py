@@ -305,7 +305,7 @@ class NotebookView(object):
     def get_cell_separator(self):
         return "="*120
 
-    def on_modified(self):
+    def on_sel_modified(self):
         readonly = True
         regset = self.view.get_regions("inb_input")
 
@@ -317,7 +317,6 @@ class NotebookView(object):
                 if reg.contains(s):
                     if first_cell_index < 0:
                         first_cell_index = i
-                    self.cells[i].check_R()
                     readonly = False
                     break
             if readonly:
@@ -329,6 +328,16 @@ class NotebookView(object):
             self.view.erase_regions("inb_highlight")
 
         self.view.set_read_only(readonly)
+
+    def on_modified(self):
+        regset = self.view.get_regions("inb_input")
+
+        for s in self.view.sel():
+            for i, reg in enumerate(regset):
+                reg = sublime.Region(reg.begin()+1, reg.end()-1)
+                if reg.contains(s):
+                    self.cells[i].check_R()
+                    break
 
     def highlight_cell(self, input_region):
         reg = self.view.line(input_region.begin()-2)
@@ -614,6 +623,11 @@ class NotebookViewManager(object):
         nbview.view = view
         return nbview
 
+    def on_close(self, view):
+        id = view.id()
+        if id in self.views:
+        	del self.views[id]
+
 manager = NotebookViewManager()
 
 
@@ -621,7 +635,15 @@ class SublimeINListener(sublime_plugin.EventListener):
     def on_selection_modified(self, view):
         nbview = manager.get_nb_view(view)
         if nbview:
+            nbview.on_sel_modified()
+
+    def on_modified(self, view):
+        nbview = manager.get_nb_view(view)
+        if nbview:
             nbview.on_modified()
+
+    def on_close(self, view):
+    	manager.on_close(view)
 
 
 class InbPromptListNotebooksCommand(sublime_plugin.WindowCommand):
@@ -801,9 +823,7 @@ class InbOpenAsIpynbCommand(sublime_plugin.WindowCommand):
         if nbview:
             s = str(nbview.notebook)
             new_view = self.window.new_file()
-            # edit = new_view.begin_edit()
             new_view.run_command('inb_insert_string', {'s': s})
-            # new_view.end_edit(edit)
             new_view.set_name(nbview.name + ".ipynb")
 
 class InbInsertStringCommand(sublime_plugin.TextCommand):
