@@ -31,14 +31,19 @@ class BaseCellView(object):
         self.owned_regions = ["inb_input"]
 
     def get_cell_region(self):
-        reg = self.view.get_regions("inb_cells")[self.index]
-        return sublime.Region(reg.a+1, reg.b)
+        try:
+            reg = self.view.get_regions("inb_cells")[self.index]
+            return sublime.Region(reg.a+1, reg.b)
+        except IndexError:
+            return None
 
     def run(self, kernel, region):
         pass
 
     def get_region(self, regname):
         cell_reg = self.get_cell_region()
+        if cell_reg is None:
+            return None
         all_regs = self.view.get_regions(regname)
         for reg in all_regs:
             if cell_reg.contains(reg):
