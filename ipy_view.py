@@ -298,7 +298,11 @@ class NotebookView(object):
         self.kernel.status_callback = self.on_status
         self.on_status({"execution_state": "idle"})
         self.notebook = self.kernel.get_notebook()
+        self.modified = False
+        self.show_modified_status(False)
+
         view.set_name("IPy Notebook - " + self.notebook.name)
+
 
     def get_name(self):
         return self.notebook.name
@@ -334,7 +338,24 @@ class NotebookView(object):
 
         self.view.set_read_only(readonly)
 
+    def show_modified_status(self, val):
+        if val:
+            state = "modified"
+        else:
+            state = "saved"
+
+        def set_status():
+            self.view.set_status("NotebookStatus", "notebook: " + state)
+        sublime.set_timeout(set_status, 0)
+
+    def set_modified(self, new_val):
+        if self.modified != new_val:
+            self.show_modified_status(new_val)
+        self.modified = new_val
+
     def on_modified(self):
+        self.set_modified(True)
+
         regset = self.view.get_regions("inb_input")
 
         for s in self.view.sel():
@@ -427,6 +448,7 @@ class NotebookView(object):
 
     def save_notebook(self):
         self.kernel.save_notebook(self.notebook)
+        self.set_modified(False)
 
     def render_notebook(self, edit):
         self.cells = []
@@ -447,6 +469,8 @@ class NotebookView(object):
         
         if len(self.cells) > 0:
             self.cells[0].select()
+
+        sublime.set_timeout(lambda : self.set_modified(False), 0)
 
     def update_notebook_from_buffer(self):
         for cell in self.cells:

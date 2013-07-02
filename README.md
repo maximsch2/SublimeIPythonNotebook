@@ -1,5 +1,5 @@
 # Sublime IPython Notebook 
-This is a Sublime Text 2 plugin that emulates IPython notebook interface inside Sublime.
+This is a Sublime Text 3/2 plugin that emulates IPython notebook interface inside Sublime.
 
 ## Disclaimer
 While the plugin looks stable so far and I am trying to preserve as much of the notebook data as possible, there are no guarantees that you data will be safe. Do not use it for the notebooks that contain valuable data without doing a backup.
