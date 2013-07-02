@@ -6,9 +6,9 @@
 import sublime
 import sublime_plugin
 try:
-    from SublimeIPythonNotebook import ipy_view
+    from SublimeIPythonNotebook import ipy_view, ipy_connection
 except ImportError:
-    import ipy_view
+    import ipy_view, ipy_connection
 
 
 manager = ipy_view.manager
