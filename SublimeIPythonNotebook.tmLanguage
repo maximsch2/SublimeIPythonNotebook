@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>fileTypes</key>
@@ -12,7 +12,8 @@
 	<array>
 		<dict>
 			<key>begin</key>
-			<string>\#Input-R\[.*\]</string>
+			<string>\#Input-R\[.*\]
+</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>0</key>
@@ -21,6 +22,8 @@
 					<string>comment</string>
 				</dict>
 			</dict>
+			<key>contentName</key>
+			<string>ipynb.source.input.r</string>
 			<key>end</key>
 			<string>\#\/Input</string>
 			<key>endCaptures</key>
@@ -31,8 +34,6 @@
 					<string>comment</string>
 				</dict>
 			</dict>
-			<key>name</key>
-			<string>ipynb.source.input.r</string>
 			<key>patterns</key>
 			<array>
 				<dict>
@@ -43,7 +44,8 @@
 		</dict>
 		<dict>
 			<key>begin</key>
-			<string>\#Input\[.*\]</string>
+			<string>\#Input\[.*\]
+</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>0</key>
@@ -52,6 +54,8 @@
 					<string>comment</string>
 				</dict>
 			</dict>
+			<key>contentName</key>
+			<string>ipynb.source.input.python</string>
 			<key>end</key>
 			<string>\#\/Input</string>
 			<key>endCaptures</key>
@@ -62,8 +66,6 @@
 					<string>comment</string>
 				</dict>
 			</dict>
-			<key>name</key>
-			<string>ipynb.source.input.python</string>
 			<key>patterns</key>
 			<array>
 				<dict>
@@ -74,7 +76,8 @@
 		</dict>
 		<dict>
 			<key>begin</key>
-			<string>\#Output\[.*\]</string>
+			<string>\#Output\[.*\]
+</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>0</key>
@@ -83,6 +86,8 @@
 					<string>comment</string>
 				</dict>
 			</dict>
+			<key>contentName</key>
+			<string>ipynb.source.output</string>
 			<key>end</key>
 			<string>\#\/Output</string>
 			<key>endCaptures</key>
@@ -93,8 +98,6 @@
 					<string>comment</string>
 				</dict>
 			</dict>
-			<key>name</key>
-			<string>ipynb.source.output</string>
 		</dict>
 		<dict>
 			<key>match</key>

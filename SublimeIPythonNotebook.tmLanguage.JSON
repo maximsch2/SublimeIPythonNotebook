@@ -11,8 +11,8 @@
 
          {
 
-           "name": "ipynb.source.input.r",
-           "begin": "\\#Input-R\\[.*\\]",
+           "contentName": "ipynb.source.input.r",
+           "begin": "\\#Input-R\\[.*\\]\n",
            "end": "\\#\\/Input",
            "beginCaptures": {
               "0": { "name": "comment"}
@@ -28,8 +28,8 @@
         },
 
         { 
-          "name": "ipynb.source.input.python",
-          "begin": "\\#Input\\[.*\\]",
+          "contentName": "ipynb.source.input.python",
+          "begin": "\\#Input\\[.*\\]\n",
            "patterns": [
               { 
               	"include": "source.python" 
@@ -46,8 +46,9 @@
         },
 
         { 
-          "name": "ipynb.source.output",
-          "begin": "\\#Output\\[.*\\]",
+          "contentName": "ipynb.source.output",
+          //"name": "storage.type.string.python",
+          "begin": "\\#Output\\[.*\\]\n",
            "end": "\\#\\/Output",
            "beginCaptures": {
               "0": { "name": "comment"}

@@ -312,7 +312,7 @@ class NotebookView(object):
         view.set_name("IPy Notebook - " + self.notebook.name)
 
     def get_cell_separator(self):
-        return "="*120
+        return "\n\n"
 
     def on_sel_modified(self):
         readonly = True
@@ -368,7 +368,7 @@ class NotebookView(object):
     def highlight_cell(self, input_region):
         reg = self.view.line(input_region.begin()-2)
         reg2 = self.view.line(input_region.end()+2)
-        self.view.add_regions("inb_highlight", [reg, reg2], "comment", "", sublime.DRAW_EMPTY)
+        self.view.add_regions("inb_highlight", [reg, reg2], "ipynb.source.highlight", "", sublime.DRAW_EMPTY)
 
     def on_backspace(self):
         s = self.view.sel()[0]
