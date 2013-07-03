@@ -490,9 +490,19 @@ class NotebookView(object):
         sel = sel[0]
         line = view.substr(view.line(sel))
         row, col = view.rowcol(sel.begin())
-        compl = self.kernel.get_completitions(line, col, timeout=0.5)
-        #compl = [s[col:] for s in compl]
-        return ([(s + "\t (IPython)", s) for s in compl], sublime.INHIBIT_EXPLICIT_COMPLETIONS | sublime.INHIBIT_WORD_COMPLETIONS)
+        compl = self.kernel.get_completitions(line, col, timeout=0.7)
+
+        
+        if len(compl) > 0:
+            def get_last_word(s): # needed for file/directory completion
+                if s.endswith("/"):
+                    s = s[:-1]
+                res = s.split("/")[-1]
+                return res
+
+            return ([(s + "\t (IPython)", get_last_word(s)) for s in compl], sublime.INHIBIT_EXPLICIT_COMPLETIONS | sublime.INHIBIT_WORD_COMPLETIONS)
+        else:
+            return None
 
     def delete_current_cell(self, edit):
         cell_index = self.get_current_cell_index()
