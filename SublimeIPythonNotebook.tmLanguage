@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>fileTypes</key>
 	<array>
 		<string>ipynb</string>
 	</array>
+	<key>foldingStartMarker</key>
+	<string>\#Output\[.*\]</string>
+	<key>foldingStopMarker</key>
+	<string>\#\/Output</string>
 	<key>name</key>
 	<string>IPython Notebook</string>
 	<key>patterns</key>
@@ -44,8 +48,7 @@
 		</dict>
 		<dict>
 			<key>begin</key>
-			<string>\#Input\[.*\]
-</string>
+			<string>\#Input\[(.*)\]\n</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>0</key>
@@ -57,7 +60,7 @@
 			<key>contentName</key>
 			<string>ipynb.source.input.python</string>
 			<key>end</key>
-			<string>\#\/Input</string>
+			<string>(\#\/Input\[\1\])$</string>
 			<key>endCaptures</key>
 			<dict>
 				<key>0</key>
@@ -70,7 +73,7 @@
 			<array>
 				<dict>
 					<key>include</key>
-					<string>source.python</string>
+					<string>#ipynb_input_python</string>
 				</dict>
 			</array>
 		</dict>
@@ -83,7 +86,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>comment</string>
+					<string>ipynb.source.invisible</string>
 				</dict>
 			</dict>
 			<key>contentName</key>
@@ -95,17 +98,24 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>comment</string>
+					<string>ipynb.source.invisible</string>
 				</dict>
 			</dict>
 		</dict>
-		<dict>
-			<key>match</key>
-			<string>=*</string>
-			<key>name</key>
-			<string>keyword</string>
-		</dict>
 	</array>
+	<key>repository</key>
+	<dict>
+		<key>ipynb_input_python</key>
+		<dict>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>source.python_no_brackets</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>scopeName</key>
 	<string>source.ipynb</string>
 	<key>uuid</key>

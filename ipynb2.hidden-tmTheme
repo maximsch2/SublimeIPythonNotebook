@@ -303,6 +303,18 @@
 				<string>#F4FFF4</string>
 			</dict>
 		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>IPython Notebook Invisible</string>
+			<key>scope</key>
+			<string>ipynb.source.invisible</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#EEEEEEEB</string>
+			</dict>
+		</dict>
 	</array>
 	<key>uuid</key>
 	<string>4FCFA210-B247-11D9-9D11-000D93347A42</string>

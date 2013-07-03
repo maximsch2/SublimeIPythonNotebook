@@ -14,7 +14,6 @@ except ImportError:
 manager = ipy_view.manager
 
 
-
 class SublimeINListener(sublime_plugin.EventListener):
     def on_selection_modified(self, view):
         nbview = manager.get_nb_view(view)
@@ -238,3 +237,14 @@ class InbRenameNotebookCommand(sublime_plugin.TextCommand):
 
     def on_done(self, line):
         self.nbview.set_name(line)
+
+
+class RewritePromptNumberCommand(sublime_plugin.TextCommand):
+    def run(self, edit, cell_index):
+        nbview = manager.get_nb_view(self.view)
+        if not nbview:
+            raise Exception("Failed to get NBView")
+
+        cell = nbview.get_cell_by_index(cell_index)
+        if cell:
+            cell.rewrite_prompt_number(edit)

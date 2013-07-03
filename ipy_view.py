@@ -4,7 +4,6 @@
 # See COPYING for details.
 
 import sublime
-import sublime_plugin
 try:
     from SublimeIPythonNotebook import ipy_connection
 except ImportError:
@@ -85,7 +84,7 @@ class BaseCellView(object):
         for regname in self.owned_regions:
             all_regs = self.view.get_regions(regname)
             all_regs = [reg for reg in all_regs if not cell_reg.contains(reg)]
-            self.view.add_regions(regname, all_regs, "string", "", input_draw_style)
+            self.view.add_regions(regname, all_regs, "source.python", "", input_draw_style)
         self.view.erase(edit, sublime.Region(cell_reg.a, cell_reg.b-1))
 
     def draw(self, edit):
@@ -139,10 +138,10 @@ class CodeCellView(BaseCellView):
         reg = sublime.Region(start, end)
         regs = view.get_regions("inb_input")
         regs.append(reg)
-        view.add_regions("inb_input", regs, "string", "", input_draw_style)
+        view.add_regions("inb_input", regs, "source.python", "", input_draw_style)
         self.view.set_read_only(False)
 
-        end = end + view.insert(edit, end, "#/Input\n\n#Output[%s]" % self.prompt)
+        end = end + view.insert(edit, end, "#/Input[%s]\n\n#Output[%s]" % (self.prompt, self.prompt))
 
         start = end
         end = start + view.insert(edit, start, "\n\n")
@@ -200,9 +199,14 @@ class CodeCellView(BaseCellView):
         self.old_prompt_number = self.prompt
         self.old_is_R = self.is_R_cell()
 
-        inp_reg = self.get_cell_region()
-        line = self.view.line(inp_reg.begin())
+        inp_reg = self.get_input_region()
+        line = self.view.line(inp_reg.begin() - 1)
         self.view.replace(edit, line, self.get_input_prompt() % self.prompt)
+
+        inp_reg = self.get_input_region()
+        line = self.view.line(inp_reg.end() + 2)
+        self.view.replace(edit, line, "#/Input[%s]" % self.prompt)
+
         out_reg = self.get_region("inb_output")
         line = self.view.line(out_reg.begin() - 1)
         self.view.replace(edit, line, "#Output[%s]" % self.prompt)
@@ -210,29 +214,21 @@ class CodeCellView(BaseCellView):
 
 
     def output_result(self, edit):
-        self.write_to_region(edit, "inb_output", self.cell.output)
+        output = self.cell.output
+        output = "\n".join(map(lambda s: " " + s, output.splitlines()))
+        print("output: '" + output + "'")
+        self.write_to_region(edit, "inb_output", output)
 
     def draw(self, edit):
         BaseCellView.draw(self, edit)
         self.write_to_region(edit, "inb_input", self.cell.source)
-        self.write_to_region(edit, "inb_output", self.cell.output)
+        self.output_result(edit)
 
     def get_code(self):
         return self.get_input_content()
 
     def update_code(self):
         self.cell.source = self.get_code()
-
-
-class RewritePromptNumberCommand(sublime_plugin.TextCommand):
-    def run(self, edit, cell_index):
-        nbview = manager.get_nb_view(self.view)
-        if not nbview:
-            raise Exception("Failed to get NBView")
-
-        cell = nbview.get_cell_by_index(cell_index)
-        if cell:
-            cell.rewrite_prompt_number(edit)
 
 
 class TextCell(BaseCellView):
@@ -265,7 +261,7 @@ class TextCell(BaseCellView):
         reg = sublime.Region(start, end)
         regs = view.get_regions("inb_input")
         regs.append(reg)
-        view.add_regions("inb_input", regs, "string", "", input_draw_style)
+        view.add_regions("inb_input", regs, "source.python", "", input_draw_style)
         self.view.set_read_only(False)
 
         end = end + view.insert(edit, end, "#/" + self.get_cell_title())
@@ -396,7 +392,7 @@ class NotebookView(object):
         reg = sublime.Region(start, end)
         regs = view.get_regions("inb_cells")
         regs.append(reg)
-        view.add_regions("inb_cells", regs, "string", "", cell_draw_style)
+        view.add_regions("inb_cells", regs, "", "", cell_draw_style)
 
         return reg
 
@@ -510,7 +506,7 @@ class NotebookView(object):
         self.view.erase(edit, self.view.full_line(sublime.Region(reg.a, reg.b-1)))
         regions = self.view.get_regions("inb_cells")
         del regions[cell_index]
-        self.view.add_regions("inb_cells", regions, "string", "", cell_draw_style)
+        self.view.add_regions("inb_cells", regions, "", "", cell_draw_style)
         new_cell_index = cell_index - 1 if cell_index > 0 else 0
         self.cells[new_cell_index].select()
 

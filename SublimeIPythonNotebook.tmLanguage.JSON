@@ -1,7 +1,10 @@
 { 
+  "fileTypes": ["ipynb"],
   "name": "IPython Notebook",
   "scopeName": "source.ipynb",
-  "fileTypes": ["ipynb"],
+  "uuid": "a09ea990-df95-11e2-a28f-0800200c9a66",
+  "foldingStartMarker" : "\\#Output\\[.*\\]",
+  "foldingStopMarker" : "\\#\\/Output", 
   "patterns": [
   	    // { 
        //    "match": "Input\\[.*\\]",
@@ -29,13 +32,14 @@
 
         { 
           "contentName": "ipynb.source.input.python",
-          "begin": "\\#Input\\[.*\\]\n",
-           "patterns": [
+          "begin": "\\#Input\\[(.*)\\]\\n",
+          "end": "(\\#\\/Input\\[\\1\\])$",
+          "patterns": [
               { 
-              	"include": "source.python" 
-              },
+              	"include": "#ipynb_input_python"
+              }
            ],
-           "end": "\\#\\/Input",
+
            "beginCaptures": {
               "0": { "name": "comment"}
             },
@@ -51,17 +55,21 @@
           "begin": "\\#Output\\[.*\\]\n",
            "end": "\\#\\/Output",
            "beginCaptures": {
-              "0": { "name": "comment"}
+              "0": { "name": "ipynb.source.invisible"}
             },
            "endCaptures": {
-              "0": { "name": "comment"}
+              "0": { "name": "ipynb.source.invisible"}
             },
 
         },
-        {
-          "name": "keyword",
-          "match": "=*"
-        },
   ],
-  "uuid": "a09ea990-df95-11e2-a28f-0800200c9a66"
+  "repository" : {
+    "ipynb_input_python" : {
+        "patterns" : [
+          {"include" : "source.python_no_brackets"}
+        ]
+      }
+
+  }
+
 }
