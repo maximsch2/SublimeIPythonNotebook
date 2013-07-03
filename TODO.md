@@ -1,6 +1,9 @@
+- Completion on file names and directories should work better
+- Better control for scrolling: if I have large ouput in the last cell that suddenly gets replaced, then my scroll position is screwed up
+	- Maybe shuold keep scroll position fixed while changing output!
+- Unclosed parenthesis still break highlighting (""" for python, and ' + " for R cells)
+- Initial scroll position is bad for empty notebooks
 - Support set_next_input
-- Correctly handle 'dead' message from the kernel
 - Add an option of saving a backup copy of notebook json file (use git to have all copies?):
     - For now it is possible to use inb_open_as_ipynb command
-- Completion on file names and directories should work better
 - Support image preview in some external program

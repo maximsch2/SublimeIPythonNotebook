@@ -216,7 +216,6 @@ class CodeCellView(BaseCellView):
     def output_result(self, edit):
         output = self.cell.output
         output = "\n".join(map(lambda s: " " + s, output.splitlines()))
-        print("output: '" + output + "'")
         self.write_to_region(edit, "inb_output", output)
 
     def draw(self, edit):
@@ -292,12 +291,12 @@ class NotebookView(object):
         self.notebook_id = notebook_id
         self.kernel = create_kernel(baseurl, notebook_id)
         self.kernel.status_callback = self.on_status
-        self.on_status({"execution_state": "idle"})
+        self.on_status("idle")
         self.notebook = self.kernel.get_notebook()
         self.modified = False
         self.show_modified_status(False)
 
-        view.set_name("IPy Notebook - " + self.notebook.name)
+        self.set_name(self.notebook.name)
 
 
     def get_name(self):
@@ -305,7 +304,7 @@ class NotebookView(object):
 
     def set_name(self, new_name):
         self.notebook.name = new_name
-        view.set_name("IPy Notebook - " + self.notebook.name)
+        self.view.set_name("IPy Notebook - " + self.notebook.name)
 
     def get_cell_separator(self):
         return "\n\n"
@@ -472,10 +471,16 @@ class NotebookView(object):
         for cell in self.cells:
             cell.update_code()
 
-    def on_status(self, content):
+    def restart_kernel(self):
+        for cell in self.cells:
+            if isinstance(cell, CodeCellView):
+                cell.running = False
+        self.kernel.restart_kernel()
+
+
+    def on_status(self, execution_state):
         def set_status():
-            status = "kernel: " + content["execution_state"]
-            self.view.set_status("ExecutionStatus", status)
+            self.view.set_status("ExecutionStatus", "kernel: " + execution_state)
         sublime.set_timeout(set_status, 0)
 
     def handle_completions(self, view, prefix, locations):

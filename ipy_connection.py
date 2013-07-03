@@ -257,8 +257,7 @@ class Kernel(object):
         self.message_callbacks = dict()
         self.start_kernel()
         _thread.start_new_thread(self.process_messages, ())
-        self.status_callback = None
-        self.pager_callback = None
+        self.status_callback = lambda x: None
         self.encoding = 'utf-8'
 
     @property
@@ -280,11 +279,14 @@ class Kernel(object):
         url = "http://" + self.baseurl + "/kernels?notebook=" + self.notebook_id
         req = urlopen(url, data=b"")  # data="" makes it POST request
         req.read()
+        self.create_websockets()
 
     def restart_kernel(self):
         url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/restart"
         req = urlopen(url, data=b"")
         req.read()
+        self.create_websockets()
+        self.status_callback("idle")
 
     def interrupt_kernel(self):
         url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/interrupt"
@@ -336,17 +338,17 @@ class Kernel(object):
     def process_messages(self):
         while True:
             m = self.message_queue.get()
-            try:
-                parent_id = m["parent_header"]["msg_id"]
-            except:
-                print(("No 'parent_header' in the message: " + str(m)))
-                continue
             content = m["content"]
             msg_type = m["header"]["msg_type"]
 
+            if ("parent_header" in m) and ("msg_id" in m["parent_header"]):
+                parent_id = m["parent_header"]["msg_id"]
+            else:
+                parent_id = None
+
             if msg_type == "status":
-                if self.status_callback:
-                    self.status_callback(content)
+                if "execution_state" in content:
+                    self.status_callback(content["execution_state"])
 
             elif parent_id in self.message_callbacks:
                 callbacks = self.message_callbacks[parent_id]
@@ -383,17 +385,25 @@ class Kernel(object):
         return grab_output
 
     def create_websockets(self):
+        if self.shell is not None:
+            self.shell.close()
+
+        if self.iopub is not None:
+            self.iopub.close()
+
         url = "ws://" + self.baseurl + "/kernels/" + self.kernel_id + "/"
         self.shell = websocket.WebSocketApp(url=url + "shell",
                                             on_message=lambda ws, msg: self.on_shell_msg(msg),
-                                            on_open=lambda ws: ws.send("hallo_shell"))
+                                            on_open=lambda ws: ws.send(""),
+                                            on_error=lambda ws, err: print(err))
         self.iopub = websocket.WebSocketApp(url=url + "iopub",
                                             on_message=lambda ws, msg: self.on_iopub_msg(msg),
-                                            on_open=lambda ws: ws.send(""))
+                                            on_open=lambda ws: ws.send(""),
+                                            on_error=lambda ws, err: print(err))
 
         _thread.start_new_thread(self.shell.run_forever, ())
         _thread.start_new_thread(self.iopub.run_forever, ())
-        sleep(2)
+        sleep(1)
         self.running = True
 
     def create_message(self, msg_type, content):

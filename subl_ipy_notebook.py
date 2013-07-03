@@ -79,8 +79,8 @@ class SetPagerTextCommand(sublime_plugin.TextCommand):
 class InbRestartKernelCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         nbview = manager.get_nb_view(self.view)
-        if nbview and nbview.kernel:
-            nbview.kernel.restart_kernel()
+        if nbview:
+            nbview.restart_kernel()
 
 
 class InbInterruptKernelCommand(sublime_plugin.TextCommand):
