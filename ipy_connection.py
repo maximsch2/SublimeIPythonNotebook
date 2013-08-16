@@ -414,7 +414,8 @@ class Kernel(object):
                 session=self.session_id,
                 msg_id=create_uid()),
             content=content,
-            parent_header={})
+            parent_header={},
+            metadata={})
         return msg
 
     def send_shell(self, msg):
