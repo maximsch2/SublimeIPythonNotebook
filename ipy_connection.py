@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Maxim Grechkin
 # This file is licensed under GNU General Public License version 3
 # See COPYING for details.
-
+from __future__ import print_function
 import json
 import uuid
 

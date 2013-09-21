@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Maxim Grechkin
 # This file is licensed under GNU General Public License version 3
 # See COPYING for details.
-
+from __future__ import print_function
 import sublime
 import sublime_plugin
 try:
@@ -43,7 +43,7 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
         self.baseurl = baseurl
         nbs = ipy_connection.get_notebooks(baseurl)
         if nbs is None:
-            print ("Cannot get a list of notebooks")
+            print("Cannot get a list of notebooks")
             return
         self.nbs = nbs
         lst = ["0: Create New Notebook\n"]
