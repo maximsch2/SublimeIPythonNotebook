@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Maxim Grechkin
 # This file is licensed under GNU General Public License version 3
 # See COPYING for details.
-
+from __future__ import print_function
 import sublime
 try:
     from SublimeIPythonNotebook import ipy_connection
@@ -210,7 +210,7 @@ class CodeCellView(BaseCellView):
         out_reg = self.get_region("inb_output")
         line = self.view.line(out_reg.begin() - 1)
         self.view.replace(edit, line, "#Output[%s]" % self.prompt)
-        
+
 
 
     def output_result(self, edit):
@@ -461,7 +461,7 @@ class NotebookView(object):
 
         for cell in self.cells:
             cell.draw(edit)
-        
+
         if len(self.cells) > 0:
             self.cells[0].select()
 
@@ -492,7 +492,7 @@ class NotebookView(object):
         row, col = view.rowcol(sel.begin())
         compl = self.kernel.get_completitions(line, col, timeout=0.7)
 
-        
+
         if len(compl) > 0:
             def get_last_word(s): # needed for file/directory completion
                 if s.endswith("/"):
