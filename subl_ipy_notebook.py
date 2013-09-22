@@ -6,7 +6,7 @@ from __future__ import print_function
 import sublime
 import sublime_plugin
 try:
-    from SublimeIPythonNotebook import ipy_view, ipy_connection
+    from . import ipy_view, ipy_connection
 except ImportError:
     import ipy_view, ipy_connection
 

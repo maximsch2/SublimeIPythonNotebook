@@ -27,9 +27,9 @@ if sys.version_info[0] == 2:
     from urllib2 import Request
 else:
     import _thread
-    from SublimeIPythonNotebook.external import nbformat3 as nbformat
-    from SublimeIPythonNotebook.external.websocket import websocket3 as websocket
-    from SublimeIPythonNotebook.external.websocket.websocket3 import *
+    from .external import nbformat3 as nbformat
+    from .external.websocket import websocket3 as websocket
+    from .external.websocket.websocket3 import *
     from urllib.request import urlopen, Request
     from urllib.parse import urlparse
 
