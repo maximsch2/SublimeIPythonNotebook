@@ -7,7 +7,7 @@ import sublime
 import sublime_plugin
 try:
     from . import ipy_view, ipy_connection
-except ImportError:
+except:
     import ipy_view, ipy_connection
 
 
