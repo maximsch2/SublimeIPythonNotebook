@@ -29,9 +29,19 @@ class SublimeINListener(sublime_plugin.EventListener):
     	manager.on_close(view)
 
 
+def get_last_used_address():
+	settings = sublime.load_settings("SublimeIPythonNotebook.sublime-settings")
+	return settings.get("default_address", "127.0.0.1:7777")
+
+
+def set_last_used_address(value):
+	settings = sublime.load_settings("SublimeIPythonNotebook.sublime-settings")
+	settings.set("default_address", value)
+	sublime.save_settings("SublimeIPythonNotebook.sublime-settings")
+
 class InbPromptListNotebooksCommand(sublime_plugin.WindowCommand):
     def run(self):
-        self.window.show_input_panel("Notebook host:port : ", "127.0.0.1:8888",
+        self.window.show_input_panel("Notebook host:port : ", get_last_used_address(),
                                      self.on_done, None, None)
 
     def on_done(self, line):
@@ -45,6 +55,7 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
         if nbs is None:
             print("Cannot get a list of notebooks")
             return
+        set_last_used_address(baseurl)
         self.nbs = nbs
         lst = ["0: Create New Notebook\n"]
         for i, nb in enumerate(nbs):
