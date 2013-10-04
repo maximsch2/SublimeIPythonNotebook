@@ -10,6 +10,8 @@
 
 BUGS:
 
+Wrong highlighting for open """ . 
+
 TODO for IPython 1.0
 
 - support stdin input for %debug, raw_input and so on

@@ -27,7 +27,7 @@
 				</dict>
 			</dict>
 			<key>contentName</key>
-			<string>ipynb.source.input.r</string>
+			<string>ipynb.source.input.r source.r</string>
 			<key>end</key>
 			<string>\#\/Input</string>
 			<key>endCaptures</key>
@@ -90,7 +90,7 @@
 				</dict>
 			</dict>
 			<key>contentName</key>
-			<string>ipynb.source.input.python</string>
+			<string>ipynb.source.input.python source.python</string>
 			<key>end</key>
 			<string>(\#\/Input\[\1\])$</string>
 			<key>endCaptures</key>
