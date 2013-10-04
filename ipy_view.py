@@ -260,7 +260,7 @@ class TextCell(BaseCellView):
         reg = sublime.Region(start, end)
         regs = view.get_regions("inb_input")
         regs.append(reg)
-        view.add_regions("inb_input", regs, "source.python", "", input_draw_style)
+        view.add_regions("inb_input", regs, "text.tex.latex", "", input_draw_style)
         self.view.set_read_only(False)
 
         end = end + view.insert(edit, end, "#/" + self.get_cell_title())
