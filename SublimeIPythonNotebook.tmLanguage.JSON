@@ -30,6 +30,25 @@
            ]
         },
 
+         {
+
+           "contentName": "ipynb.text.tex.latex text.tex.latex",
+           "begin": "\\#Markdown\n",
+           "end": "\\#\\/Markdown",
+           "beginCaptures": {
+              "0": { "name": "comment"}
+            },
+           "endCaptures": {
+              "0": { "name": "comment"}
+            },
+           "patterns": [
+                {
+                  "include": "text.tex.latex"
+                },
+           ]
+        },
+
+
         { 
           "contentName": "ipynb.source.input.python",
           "begin": "\\#Input\\[(.*)\\]\\n",

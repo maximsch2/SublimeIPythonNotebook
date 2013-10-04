@@ -97,6 +97,9 @@ class BaseCellView(object):
             return self.view.substr(input_region)
         else:
             return ""
+    
+    def check_R(self):
+        pass
 
 
 class CodeCellView(BaseCellView):
@@ -260,7 +263,7 @@ class TextCell(BaseCellView):
         reg = sublime.Region(start, end)
         regs = view.get_regions("inb_input")
         regs.append(reg)
-        view.add_regions("inb_input", regs, "text.tex.latex", "", input_draw_style)
+        view.add_regions("inb_input", regs, "source.python", "", input_draw_style)
         self.view.set_read_only(False)
 
         end = end + view.insert(edit, end, "#/" + self.get_cell_title())
@@ -356,7 +359,7 @@ class NotebookView(object):
         for s in self.view.sel():
             for i, reg in enumerate(regset):
                 reg = sublime.Region(reg.begin()+1, reg.end()-1)
-                if reg.contains(s):
+                if reg.contains(s) and (i < len(self.cells)):
                     self.cells[i].check_R()
                     break
 
@@ -484,6 +487,11 @@ class NotebookView(object):
         sublime.set_timeout(set_status, 0)
 
     def handle_completions(self, view, prefix, locations):
+        cell_index = self.get_current_cell_index()
+        if cell_index < 0:
+            return None
+        if not isinstance(self.cells[cell_index], CodeCellView):
+            return None
         sel = view.sel()
         if len(sel) > 1:
             return []
