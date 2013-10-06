@@ -31,7 +31,7 @@ class SublimeINListener(sublime_plugin.EventListener):
 
 def get_last_used_address():
 	settings = sublime.load_settings("SublimeIPythonNotebook.sublime-settings")
-	return settings.get("default_address", "127.0.0.1:7777")
+	return settings.get("default_address", "127.0.0.1:8888")
 
 
 def set_last_used_address(value):
