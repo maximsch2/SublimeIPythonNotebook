@@ -29,31 +29,36 @@ else:
     from .external import nbformat3 as nbformat
     from .external.websocket import websocket3 as websocket
     from .external.websocket.websocket3 import *
-    from urllib.request import urlopen, Request, ProxyHandler, build_opener, install_opener
-    from urllib.parse import urlparse
-
-
-
+    from urllib.request import urlopen, Request, ProxyHandler, build_opener, install_opener, HTTPCookieProcessor
+    from urllib.parse import urlparse, urlencode
+    from http.cookiejar import CookieJar
 
 def install_proxy_opener():
+    cookies=CookieJar()
     proxy = ProxyHandler({})
-    opener = build_opener(proxy)
+    opener = build_opener(proxy, HTTPCookieProcessor(cookies))
     install_opener(opener)
+    return cookies
 
-install_proxy_opener()
+cookies=install_proxy_opener()
 
 def create_uid():
     return str(uuid.uuid4())
 
-def get_notebooks(baseurl):
-    target_url = "http://%s/notebooks" % baseurl
+def get_notebooks(baseurl, psswd=None):
     try:
+        if psswd!=None:
+            target_url=baseurl+'''/login?next=%2F'''
+            urlopen(target_url, data=urlencode({'password': psswd}).encode('utf8'))
+        target_url = baseurl    +"/notebooks"
         req = urlopen(target_url)
         try:
             encoding = req.headers.get_content_charset()
             body = req.readall().decode(encoding)
         except AttributeError:
             body = req.read()
+        if '<input type="password" name="password" id="password_input">' in body:
+            return 'psswd'
         data = json.loads(body)
         return data
     except Exception as e:
@@ -63,7 +68,7 @@ def get_notebooks(baseurl):
 
 def create_new_notebook(baseurl):
     try:
-        req = urlopen("http://" + baseurl + "/new")
+        req = urlopen(baseurl + "/new")
         try:
             encoding = req.headers.get_content_charset()
             body = req.readall().decode(encoding)
@@ -285,20 +290,20 @@ class Kernel(object):
         raise Exception("notebook_id not found")
 
     def start_kernel(self):
-        url = "http://" + self.baseurl + "/kernels?notebook=" + self.notebook_id
+        url = self.baseurl + "/kernels?notebook=" + self.notebook_id
         req = urlopen(url, data=b"")  # data="" makes it POST request
         req.read()
         self.create_websockets()
 
     def restart_kernel(self):
-        url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/restart"
+        url = self.baseurl + "/kernels/" + self.kernel_id + "/restart"
         req = urlopen(url, data=b"")
         req.read()
         self.create_websockets()
         self.status_callback("idle")
 
     def interrupt_kernel(self):
-        url = "http://" + self.baseurl + "/kernels/" + self.kernel_id + "/interrupt"
+        url = self.baseurl + "/kernels/" + self.kernel_id + "/interrupt"
         req = urlopen(url, data=bytearray(b""))
         req.read()
 
@@ -311,7 +316,7 @@ class Kernel(object):
 
     @property
     def notebook_url(self):
-        return "http://" + self.baseurl + "/notebooks/" + self.notebook_id
+        return self.baseurl + "/notebooks/" + self.notebook_id
 
     def save_notebook(self, notebook):
         request = Request(self.notebook_url, str(notebook).encode(self.encoding))
@@ -400,15 +405,17 @@ class Kernel(object):
         if self.iopub is not None:
             self.iopub.close()
 
-        url = "ws://" + self.baseurl + "/kernels/" + self.kernel_id + "/"
+        url = self.baseurl.replace('http', 'ws') + "/kernels/" + self.kernel_id + "/"
+        auth=''.join([c.name+'='+c.value for c in cookies])
         self.shell = websocket.WebSocketApp(url=url + "shell",
                                             on_message=lambda ws, msg: self.on_shell_msg(msg),
-                                            on_open=lambda ws: ws.send(""),
+                                            on_open=lambda ws: ws.send(auth),
                                             on_error=lambda ws, err: print(err))
         self.iopub = websocket.WebSocketApp(url=url + "iopub",
                                             on_message=lambda ws, msg: self.on_iopub_msg(msg),
-                                            on_open=lambda ws: ws.send(""),
-                                            on_error=lambda ws, err: print(err))
+                                            on_open=lambda ws: ws.send(auth),
+                                            on_error=lambda ws, err: print(err)
+                                            )
 
         _thread.start_new_thread(self.shell.run_forever, ())
         _thread.start_new_thread(self.iopub.run_forever, ())

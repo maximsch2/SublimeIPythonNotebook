@@ -31,7 +31,7 @@ class SublimeINListener(sublime_plugin.EventListener):
 
 def get_last_used_address():
 	settings = sublime.load_settings("SublimeIPythonNotebook.sublime-settings")
-	return settings.get("default_address", "127.0.0.1:8888")
+	return settings.get("default_address", "http://127.0.0.1:8888")
 
 
 def set_last_used_address(value):
@@ -45,13 +45,25 @@ class InbPromptListNotebooksCommand(sublime_plugin.WindowCommand):
                                      self.on_done, None, None)
 
     def on_done(self, line):
-        self.window.run_command("inb_list_notebooks", {"baseurl": line})
+        self.window.run_command("inb_list_notebooks", {"baseurl": line, "psswd": None})
+
+class InbPromptPasswordCommand(sublime_plugin.WindowCommand):
+    def run(self, baseurl):
+        self.baseurl=baseurl
+        self.window.show_input_panel("Password: ", '',
+                                     self.on_done, None, None)
+
+    def on_done(self, line):
+        self.window.run_command("inb_list_notebooks", {"baseurl": self.baseurl, 'psswd': line})
 
 
 class InbListNotebooksCommand(sublime_plugin.WindowCommand):
-    def run(self, baseurl):
+    def run(self, baseurl, psswd):
         self.baseurl = baseurl
-        nbs = ipy_connection.get_notebooks(baseurl)
+        nbs = ipy_connection.get_notebooks(baseurl, psswd)
+        if nbs=='psswd':
+            self.window.run_command("inb_prompt_password", {"baseurl": baseurl})
+            return
         if nbs is None:
             print("Cannot get a list of notebooks")
             return
