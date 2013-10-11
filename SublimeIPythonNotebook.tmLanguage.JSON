@@ -14,7 +14,7 @@
 
          {
 
-           "contentName": "ipynb.source.input.r",
+           "contentName": "ipynb.source.input.r source.r",
            "begin": "\\#Input-R\\[.*\\]\n",
            "end": "\\#\\/Input",
            "beginCaptures": {
@@ -30,8 +30,27 @@
            ]
         },
 
+         {
+
+           "contentName": "ipynb.text.tex.latex text.tex.latex",
+           "begin": "\\#Markdown\n",
+           "end": "\\#\\/Markdown",
+           "beginCaptures": {
+              "0": { "name": "comment"}
+            },
+           "endCaptures": {
+              "0": { "name": "comment"}
+            },
+           "patterns": [
+                {
+                  "include": "text.tex.latex"
+                },
+           ]
+        },
+
+
         { 
-          "contentName": "ipynb.source.input.python",
+          "contentName": "ipynb.source.input.python source.python",
           "begin": "\\#Input\\[(.*)\\]\\n",
           "end": "(\\#\\/Input\\[\\1\\])$",
           "patterns": [

@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Maxim Grechkin
 # This file is licensed under GNU General Public License version 3
 # See COPYING for details.
-
+from __future__ import print_function
 import json
 import uuid
 
@@ -23,25 +23,32 @@ if sys.version_info[0] == 2:
     from external.websocket import websocket
     from external.websocket.websocket import *
     from urlparse import urlparse
-    from urllib2 import urlopen
-    from urllib2 import Request
+    from urllib2 import urlopen, Request, ProxyHandler, build_opener, install_opener
 else:
     import _thread
-    from SublimeIPythonNotebook.external import nbformat3 as nbformat
-    from SublimeIPythonNotebook.external.websocket import websocket3 as websocket
-    from SublimeIPythonNotebook.external.websocket.websocket3 import *
-    from urllib.request import urlopen, Request
+    from .external import nbformat3 as nbformat
+    from .external.websocket import websocket3 as websocket
+    from .external.websocket.websocket3 import *
+    from urllib.request import urlopen, Request, ProxyHandler, build_opener, install_opener
     from urllib.parse import urlparse
 
 
 
+
+def install_proxy_opener():
+    proxy = ProxyHandler({})
+    opener = build_opener(proxy)
+    install_opener(opener)
+
+install_proxy_opener()
+
 def create_uid():
     return str(uuid.uuid4())
 
-
 def get_notebooks(baseurl):
+    target_url = "http://%s/notebooks" % baseurl
     try:
-        req = urlopen("http://" + baseurl + "/notebooks")
+        req = urlopen(target_url)
         try:
             encoding = req.headers.get_content_charset()
             body = req.readall().decode(encoding)
@@ -49,7 +56,9 @@ def get_notebooks(baseurl):
             body = req.read()
         data = json.loads(body)
         return data
-    except:
+    except Exception as e:
+        print("Error during loading notebook list from ", target_url)
+        print(e)
         return None
 
 def create_new_notebook(baseurl):

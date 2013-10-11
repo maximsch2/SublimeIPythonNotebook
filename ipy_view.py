@@ -2,11 +2,11 @@
 # Copyright (c) 2013, Maxim Grechkin
 # This file is licensed under GNU General Public License version 3
 # See COPYING for details.
-
+from __future__ import print_function
 import sublime
 try:
-    from SublimeIPythonNotebook import ipy_connection
-except ImportError:
+    from . import ipy_connection
+except:
     import ipy_connection
 import re
 
@@ -97,6 +97,9 @@ class BaseCellView(object):
             return self.view.substr(input_region)
         else:
             return ""
+    
+    def check_R(self):
+        pass
 
 
 class CodeCellView(BaseCellView):
@@ -210,7 +213,7 @@ class CodeCellView(BaseCellView):
         out_reg = self.get_region("inb_output")
         line = self.view.line(out_reg.begin() - 1)
         self.view.replace(edit, line, "#Output[%s]" % self.prompt)
-        
+
 
 
     def output_result(self, edit):
@@ -285,7 +288,7 @@ class NotebookView(object):
         self.baseurl = baseurl
         view.set_scratch(True)
         #view.set_syntax_file("Packages/Python/Python.tmLanguage")
-        view.set_syntax_file("Packages/SublimeIPythonNotebook/SublimeIPythonNotebook.tmLanguage")
+        view.set_syntax_file("Packages/IPython Notebook/SublimeIPythonNotebook.tmLanguage")
         view.settings().set("ipython_notebook", True)
         self.cells = []
         self.notebook_id = notebook_id
@@ -356,7 +359,7 @@ class NotebookView(object):
         for s in self.view.sel():
             for i, reg in enumerate(regset):
                 reg = sublime.Region(reg.begin()+1, reg.end()-1)
-                if reg.contains(s):
+                if reg.contains(s) and (i < len(self.cells)):
                     self.cells[i].check_R()
                     break
 
@@ -461,7 +464,7 @@ class NotebookView(object):
 
         for cell in self.cells:
             cell.draw(edit)
-        
+
         if len(self.cells) > 0:
             self.cells[0].select()
 
@@ -484,6 +487,11 @@ class NotebookView(object):
         sublime.set_timeout(set_status, 0)
 
     def handle_completions(self, view, prefix, locations):
+        cell_index = self.get_current_cell_index()
+        if cell_index < 0:
+            return None
+        if not isinstance(self.cells[cell_index], CodeCellView):
+            return None
         sel = view.sel()
         if len(sel) > 1:
             return []
@@ -492,7 +500,7 @@ class NotebookView(object):
         row, col = view.rowcol(sel.begin())
         compl = self.kernel.get_completitions(line, col, timeout=0.7)
 
-        
+
         if len(compl) > 0:
             def get_last_word(s): # needed for file/directory completion
                 if s.endswith("/"):

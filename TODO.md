@@ -7,3 +7,11 @@
 - Add an option of saving a backup copy of notebook json file (use git to have all copies?):
     - For now it is possible to use inb_open_as_ipynb command
 - Support image preview in some external program
+
+BUGS:
+
+Wrong highlighting for open """ . 
+
+TODO for IPython 1.0
+
+- support stdin input for %debug, raw_input and so on
