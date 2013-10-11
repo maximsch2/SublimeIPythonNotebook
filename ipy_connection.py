@@ -2,7 +2,6 @@
 # Copyright (c) 2013, Maxim Grechkin
 # This file is licensed under GNU General Public License version 3
 # See COPYING for details.
-from __future__ import print_function
 import json
 import uuid
 
@@ -38,11 +37,8 @@ def get_notebooks(baseurl):
     target_url = "http://%s/notebooks" % baseurl
     try:
         req = urlopen(target_url)
-        try:
-            encoding = req.headers.get_content_charset()
-            body = req.readall().decode(encoding)
-        except AttributeError:
-            body = req.read()
+        encoding = req.headers.get_content_charset()
+        body = req.readall().decode(encoding)
         data = json.loads(body)
         return data
     except Exception as e:
@@ -53,12 +49,8 @@ def get_notebooks(baseurl):
 def create_new_notebook(baseurl):
     try:
         req = urlopen("http://" + baseurl + "/new")
-        try:
-            encoding = req.headers.get_content_charset()
-            body = req.readall().decode(encoding)
-        except AttributeError:
-            encoding = req.headers.getparam('charset')
-            body = req.read()
+        encoding = req.headers.get_content_charset()
+        body = req.readall().decode(encoding)
         import re
         match =  re.search("data-notebook-id=(.*)", body)
         nbid = match.groups()[0]
