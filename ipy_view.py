@@ -4,10 +4,7 @@
 # See COPYING for details.
 from __future__ import print_function
 import sublime
-try:
-    from . import ipy_connection
-except:
-    import ipy_connection
+from . import ipy_connection
 import re
 
 

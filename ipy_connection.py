@@ -8,29 +8,18 @@ import uuid
 
 from time import sleep
 import threading
-try:
-    import queue
-except ImportError:
-    import Queue as queue
+import queue
 
 from collections import defaultdict
 
 import re
 import sys
-if sys.version_info[0] == 2:
-    import thread as _thread
-    from external import nbformat as nbformat
-    from external.websocket import websocket
-    from external.websocket.websocket import *
-    from urlparse import urlparse
-    from urllib2 import urlopen, Request, ProxyHandler, build_opener, install_opener
-else:
-    import _thread
-    from .external import nbformat3 as nbformat
-    from .external.websocket import websocket3 as websocket
-    from .external.websocket.websocket3 import *
-    from urllib.request import urlopen, Request, ProxyHandler, build_opener, install_opener
-    from urllib.parse import urlparse
+import _thread
+from .external import nbformat3 as nbformat
+from .external.websocket import websocket3 as websocket
+from .external.websocket.websocket3 import *
+from urllib.request import urlopen, Request, ProxyHandler, build_opener, install_opener
+from urllib.parse import urlparse
 
 
 
