@@ -288,7 +288,7 @@ class NotebookView(object):
         self.baseurl = baseurl
         view.set_scratch(True)
         #view.set_syntax_file("Packages/Python/Python.tmLanguage")
-        view.set_syntax_file("Packages/SublimeIPythonNotebook/SublimeIPythonNotebook.tmLanguage")
+        view.set_syntax_file("Packages/IPython Notebook/SublimeIPythonNotebook.tmLanguage")
         view.settings().set("ipython_notebook", True)
         self.cells = []
         self.notebook_id = notebook_id
