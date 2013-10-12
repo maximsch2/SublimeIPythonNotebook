@@ -26,26 +26,46 @@ class SublimeINListener(sublime_plugin.EventListener):
             nbview.on_modified()
 
     def on_close(self, view):
-    	manager.on_close(view)
+        manager.on_close(view)
 
 
 def get_last_used_address():
-	settings = sublime.load_settings("SublimeIPythonNotebook.sublime-settings")
-	return settings.get("default_address", "http://127.0.0.1:8888")
+    settings = sublime.load_settings("SublimeIPythonNotebook.sublime-settings")
+    lst=settings.get("default_address", [])
+    return lst if type(lst)==list else [lst]
 
 
 def set_last_used_address(value):
-	settings = sublime.load_settings("SublimeIPythonNotebook.sublime-settings")
-	settings.set("default_address", value)
-	sublime.save_settings("SublimeIPythonNotebook.sublime-settings")
+    settings = sublime.load_settings("SublimeIPythonNotebook.sublime-settings")
+    addresses = get_last_used_address()
+    if value in addresses:
+        addresses.pop(addresses.index(value))
+    settings.set("default_address", [value]+addresses)
+    sublime.save_settings("SublimeIPythonNotebook.sublime-settings")
 
 class InbPromptListNotebooksCommand(sublime_plugin.WindowCommand):
     def run(self):
-        self.window.show_input_panel("Notebook host:port : ", get_last_used_address(),
+        self.previous_addresses=get_last_used_address()
+        if len(self.previous_addresses)==0:
+            self.new_server()
+            return
+        self.previous_addresses += ["New Server"]
+        self.window.show_quick_panel(self.previous_addresses, self.on_done)
+
+    def new_server(self):
+        self.window.show_input_panel("Notebook host:port : ", "http://127.0.0.1:8888",
                                      self.on_done, None, None)
 
     def on_done(self, line):
-        self.window.run_command("inb_list_notebooks", {"baseurl": line, "psswd": None})
+        if line==-1:
+            return
+        if type(line)==int:
+            if line==len(self.previous_addresses)-1:
+                self.new_server()
+            else:
+                self.window.run_command("inb_list_notebooks", {"baseurl": self.previous_addresses[line], "psswd": None})
+        else:
+            self.window.run_command("inb_list_notebooks", {"baseurl": line, "psswd": None})
 
 class InbPromptPasswordCommand(sublime_plugin.WindowCommand):
     def run(self, baseurl):
@@ -59,6 +79,8 @@ class InbPromptPasswordCommand(sublime_plugin.WindowCommand):
 
 class InbListNotebooksCommand(sublime_plugin.WindowCommand):
     def run(self, baseurl, psswd):
+        ipy_connection.install_proxy_opener()
+
         self.baseurl = baseurl
         nbs = ipy_connection.get_notebooks(baseurl, psswd)
         if nbs=='psswd':
@@ -73,7 +95,7 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
         for i, nb in enumerate(nbs):
             lst.append(str(i+1) + ":  " + nb["name"] + "\n")
 
-        self.window.show_quick_panel(lst, self.on_done)
+        sublime.set_timeout(lambda: self.window.show_quick_panel(lst, self.on_done), 1)
 
     def on_done(self, picked):
         if picked == -1:

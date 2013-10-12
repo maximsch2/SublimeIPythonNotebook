@@ -34,13 +34,11 @@ else:
     from http.cookiejar import CookieJar
 
 def install_proxy_opener():
+    global cookies
     cookies=CookieJar()
     proxy = ProxyHandler({})
     opener = build_opener(proxy, HTTPCookieProcessor(cookies))
     install_opener(opener)
-    return cookies
-
-cookies=install_proxy_opener()
 
 def create_uid():
     return str(uuid.uuid4())
