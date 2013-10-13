@@ -16,14 +16,13 @@
 			]
 	},
     {
-        "keys": ["super+s"], "command": "inb_none",
+        "keys": ["super+s"], "command": "inb_save_notebook",
         "context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]
     },
     {
         "keys": ["ctrl+s"], "command": "inb_save_notebook",
         "context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]
     },
-
     {
         "keys": ["ctrl+m", "d"], "command": "inb_delete_current_cell",
         "context" : [ { "key": "setting.ipython_notebook", "operator": "equal", "operand": true }]
@@ -108,9 +107,6 @@
             { "key": "auto_complete_visible", "operator": "equal", "operand": false }
             ]
     }
-
-
-
 
 ]
 
