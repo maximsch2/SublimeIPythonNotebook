@@ -1,5 +1,5 @@
 # Sublime IPython Notebook 
-This is a Sublime Text 3/2 plugin that emulates IPython notebook interface inside Sublime.
+This is a Sublime Text 3 plugin that emulates IPython notebook interface inside Sublime.
 
 ## Disclaimer
 While the plugin looks stable so far and I am trying to preserve as much of the notebook data as possible, there are no guarantees that you data will be safe. Do not use it for the notebooks that contain valuable data without doing a backup.
@@ -17,9 +17,10 @@ While the plugin looks stable so far and I am trying to preserve as much of the 
     - ctrl+m, y - code cell
     - ctrl+m, m - markdown cell
     - ctrl+m, t - raw cell
-    - ctrl+m, s - save notebook
+    - ctrl+m, s - save notebook (ctrl+s and super+s will work too)
 
 ## Notes
 1. You can use %pylab inline. You will not be able to see the plots, but they will be saved in the notebook and available when viewing it through the web interface.
 2. I am using websocket-client library from https://github.com/liris/websocket-client and (slightly patched) subset of the IPython. You do not have to install them separately. 
 3. ST3 port was contributed by [chirswl](https://github.com/chriswl)
+4. Dark theme, support for password-protected servers and nicer last-used-server picker was contributed by [z-m-k](https://github.com/z-m-k)
