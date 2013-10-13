@@ -2,13 +2,9 @@
 # Copyright (c) 2013, Maxim Grechkin
 # This file is licensed under GNU General Public License version 3
 # See COPYING for details.
-from __future__ import print_function
 import sublime
 import sublime_plugin
-try:
-    from . import ipy_view, ipy_connection
-except:
-    import ipy_view, ipy_connection
+from . import ipy_view, ipy_connection
 
 
 manager = ipy_view.manager

@@ -2,36 +2,24 @@
 # Copyright (c) 2013, Maxim Grechkin
 # This file is licensed under GNU General Public License version 3
 # See COPYING for details.
-from __future__ import print_function
 import json
 import uuid
 
 from time import sleep
 import threading
-try:
-    import queue
-except ImportError:
-    import Queue as queue
+import queue
 
 from collections import defaultdict
 
 import re
 import sys
-if sys.version_info[0] == 2:
-    import thread as _thread
-    from external import nbformat as nbformat
-    from external.websocket import websocket
-    from external.websocket.websocket import *
-    from urlparse import urlparse
-    from urllib2 import urlopen, Request, ProxyHandler, build_opener, install_opener
-else:
-    import _thread
-    from .external import nbformat3 as nbformat
-    from .external.websocket import websocket3 as websocket
-    from .external.websocket.websocket3 import *
-    from urllib.request import urlopen, Request, ProxyHandler, build_opener, install_opener, HTTPCookieProcessor
-    from urllib.parse import urlparse, urlencode
-    from http.cookiejar import CookieJar
+import _thread
+from .external import nbformat3 as nbformat
+from .external.websocket import websocket3 as websocket
+from .external.websocket.websocket3 import *
+from urllib.request import urlopen, Request, ProxyHandler, build_opener, install_opener, HTTPCookieProcessor
+from urllib.parse import urlparse, urlencode
+from http.cookiejar import CookieJar
 
 def install_proxy_opener():
     global cookies
@@ -50,11 +38,7 @@ def get_notebooks(baseurl, psswd=None):
             urlopen(target_url, data=urlencode({'password': psswd}).encode('utf8'))
         target_url = baseurl    +"/notebooks"
         req = urlopen(target_url)
-        try:
-            encoding = req.headers.get_content_charset()
-            body = req.readall().decode(encoding)
-        except AttributeError:
-            body = req.read()
+        body = req.readall().decode(encoding)
         if '<input type="password" name="password" id="password_input">' in body:
             return 'psswd'
         data = json.loads(body)
@@ -67,12 +51,8 @@ def get_notebooks(baseurl, psswd=None):
 def create_new_notebook(baseurl):
     try:
         req = urlopen(baseurl + "/new")
-        try:
-            encoding = req.headers.get_content_charset()
-            body = req.readall().decode(encoding)
-        except AttributeError:
-            encoding = req.headers.getparam('charset')
-            body = req.read()
+        encoding = req.headers.get_content_charset()
+        body = req.readall().decode(encoding)
         import re
         match =  re.search("data-notebook-id=(.*)", body)
         nbid = match.groups()[0]
@@ -412,8 +392,7 @@ class Kernel(object):
         self.iopub = websocket.WebSocketApp(url=url + "iopub",
                                             on_message=lambda ws, msg: self.on_iopub_msg(msg),
                                             on_open=lambda ws: ws.send(auth),
-                                            on_error=lambda ws, err: print(err)
-                                            )
+                                            on_error=lambda ws, err: print(err))
 
         _thread.start_new_thread(self.shell.run_forever, ())
         _thread.start_new_thread(self.iopub.run_forever, ())
