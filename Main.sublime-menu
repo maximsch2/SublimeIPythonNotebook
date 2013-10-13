@@ -17,13 +17,13 @@
                         [
                             {
                                 "command": "open_file",
-                                "args": {"file": "${packages}/SublimeIPythonNotebook/README.md"},
+                                "args": {"file": "${packages}/IPython Notebook/README.md"},
                                 "caption": "README"
                             },
                             { "caption": "-" },
                             {
                                 "command": "open_file",
-                                "args": {"file": "${packages}/SublimeIPythonNotebook/SublimeIPythonNotebook.sublime-settings"},
+                                "args": {"file": "${packages}/IPython Notebook/SublimeIPythonNotebook.sublime-settings"},
                                 "caption": "Settings – Default"
                             },
                             {
@@ -34,7 +34,7 @@
                             { "caption": "-" },
                             {
                                 "command": "open_file",
-                                "args": {"file": "${packages}/SublimeIPythonNotebook/Default.sublime-keymap"},
+                                "args": {"file": "${packages}/IPython Notebook/Default.sublime-keymap"},
                                 "caption": "Key Bindings – Default"
                             },
                             {
