@@ -38,6 +38,7 @@ def get_notebooks(baseurl, psswd=None):
             urlopen(target_url, data=urlencode({'password': psswd}).encode('utf8'))
         target_url = baseurl    +"/notebooks"
         req = urlopen(target_url)
+        encoding = req.headers.get_content_charset()
         body = req.readall().decode(encoding)
         if '<input type="password" name="password" id="password_input">' in body:
             return 'psswd'
