@@ -24,3 +24,60 @@ While the plugin looks stable so far and I am trying to preserve as much of the 
 2. I am using websocket-client library from https://github.com/liris/websocket-client and (slightly patched) subset of the IPython. You do not have to install them separately. 
 3. ST3 port was contributed by [chirswl](https://github.com/chriswl)
 4. Dark theme, support for password-protected servers and nicer last-used-server picker was contributed by [z-m-k](https://github.com/z-m-k)
+
+## Vintage Mode
+In Vintage mode, for the navigation keys to work as expected in IPython Notebook buffer, you need to modify some keybindings. Add the following to your `Key Bindings - User`.
+
+1. Add a `context key` to `Shift+Enter` so you can run a cell with `Shift+Enter` in the command mode:
+
+    ```
+    { "keys": ["shift+enter"], "command": "set_motion", "args": {
+        "motion": "move",
+        "motion_args": {"by": "lines", "forward": true, "extend": true }},
+        "context": [
+            { "key": "setting.command_mode"},
+            { "key": "setting.ipython_notebook", "operator": "equal", "operand": false },
+            ]
+    },
+    ```
+2. Command mode Up/Down navigation keys:
+
+    ```
+    { "keys": ["j"], "command": "set_motion", "args": {
+        "motion": "move",
+        "motion_args": {"by": "lines", "forward": true, "extend": true },
+        "linewise": true },
+        "context": [
+            { "key": "setting.command_mode"},
+            { "key": "setting.ipython_notebook", "operator": "equal", "operand": false },
+            ]
+    },
+    
+    {
+        "keys": ["j"], "command": "inb_move_up",
+        "context" : [
+            { "key": "setting.command_mode"}
+            { "key": "setting.ipython_notebook", "operator": "equal", "operand": true },
+            { "key": "auto_complete_visible", "operator": "equal", "operand": false },
+            ]
+    },
+    
+    { "keys": ["k"], "command": "set_motion", "args": {
+        "motion": "move",
+        "motion_args": {"by": "lines", "forward": false, "extend": true },
+        "linewise": true },
+        "context": [
+            { "key": "setting.command_mode"},
+            { "key": "setting.ipython_notebook", "operator": "equal", "operand": false },
+            ]
+    },
+    
+    {
+        "keys": ["k"], "command": "inb_move_down",
+        "context" : [
+            { "key": "setting.command_mode"},
+            { "key": "setting.ipython_notebook", "operator": "equal", "operand": true },
+            { "key": "auto_complete_visible", "operator": "equal", "operand": false },
+            ]
+    },
+    ```
