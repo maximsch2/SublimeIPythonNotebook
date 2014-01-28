@@ -2,3 +2,4 @@
 *.bak
 *.cache
 .DS_Store
+.idea
