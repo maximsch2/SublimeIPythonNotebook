@@ -189,8 +189,8 @@ class CodeCellView(BaseCellView):
         return (len(code) >= 3) and (code[:3] == '%%R')
 
     def check_R(self):
-    	if self.old_is_R != self.is_R_cell():
-    		self.update_prompt_number()
+        if self.old_is_R != self.is_R_cell():
+            self.update_prompt_number()
 
     def rewrite_prompt_number(self, edit):
         if (self.prompt == self.old_prompt_number) and (self.old_is_R == self.is_R_cell()):
@@ -477,6 +477,11 @@ class NotebookView(object):
                 cell.running = False
         self.kernel.restart_kernel()
 
+    def shutdown_kernel(self):
+        for cell in self.cells:
+            if isinstance(cell, CodeCellView):
+                cell.running = False
+        self.kernel.shutdown_kernel()
 
     def on_status(self, execution_state):
         def set_status():
@@ -671,6 +676,6 @@ class NotebookViewManager(object):
     def on_close(self, view):
         id = view.id()
         if id in self.views:
-        	del self.views[id]
+            del self.views[id]
 
 manager = NotebookViewManager()

@@ -286,6 +286,15 @@ class Kernel(object):
         req = urlopen(url, data=bytearray(b""))
         req.read()
 
+    def shutdown_kernel(self):
+        url = self.baseurl + "/kernels/" + self.kernel_id
+        req = Request(url)
+        req.add_header("Content-Type", "application/json")
+        req.get_method = lambda: "DELETE"
+        data = urlopen(req)
+        data.read()
+        self.status_callback("closed")
+
     def get_notebook(self):
         req = urlopen(self.notebook_url)
         try:
