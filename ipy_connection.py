@@ -312,7 +312,6 @@ class Kernel(object):
         request.get_method = lambda: "PUT"
         data = urlopen(request)
         data.read()
-        self.status_callback("idle")
 
     def on_iopub_msg(self, msg):
         m = json.loads(msg)
