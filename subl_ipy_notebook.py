@@ -141,6 +141,11 @@ class InbSaveNotebookCommand(sublime_plugin.TextCommand):
     def description(self):
         return "Save IPython notebook"
 
+class InbShutdownKernelCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        nbview = manager.get_nb_view(self.view)
+        if nbview and nbview.kernel:
+            nbview.kernel.shutdown_kernel()
 
 class InbBackspaceCommand(sublime_plugin.TextCommand):
     def run(self, edit):
