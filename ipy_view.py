@@ -521,6 +521,7 @@ class NotebookView(object):
 
         self.update_notebook_from_buffer()
         self.notebook.delete_cell(cell_index)
+        self.cells[cell_index].teardown(edit)
         del self.cells[cell_index]
         for cell in self.cells:
             if cell.index >= cell_index:
