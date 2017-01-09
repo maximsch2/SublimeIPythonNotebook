@@ -85,6 +85,7 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
         if nbs is None:
             print("Cannot get a list of notebooks")
             return
+        nbs = nbs["content"]
         set_last_used_address(baseurl)
         self.nbs = nbs
         lst = ["0: Create New Notebook\n"]
@@ -99,7 +100,7 @@ class InbListNotebooksCommand(sublime_plugin.WindowCommand):
 
         view = self.window.new_file()
         if picked > 0:
-            manager.create_nb_view(view, self.nbs[picked-1]["notebook_id"], self.baseurl)
+            manager.create_nb_view(view, self.nbs[picked-1]["path"], self.baseurl)
         else:
             new_nb_id = ipy_connection.create_new_notebook(self.baseurl)
             if new_nb_id is None:

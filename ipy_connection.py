@@ -14,7 +14,7 @@ from collections import defaultdict
 import re
 import sys
 import _thread
-from .external import nbformat3 as nbformat
+from .external import nbformat
 from .external.websocket import websocket3 as websocket
 from .external.websocket.websocket3 import *
 from urllib.request import urlopen, Request, ProxyHandler, build_opener, install_opener, HTTPCookieProcessor
@@ -36,9 +36,11 @@ def get_notebooks(baseurl, psswd=None):
         if psswd!=None:
             target_url=baseurl+'''/login?next=%2F'''
             urlopen(target_url, data=urlencode({'password': psswd}).encode('utf8'))
-        target_url = baseurl    +"/notebooks"
+        target_url = baseurl + "/api/contents"
         req = urlopen(target_url)
         encoding = req.headers.get_content_charset()
+        if encoding is None:
+            encoding  = "utf8"
         body = req.readall().decode(encoding)
         if '<input type="password" name="password" id="password_input">' in body:
             return 'psswd'
@@ -94,13 +96,12 @@ def convert_mime_types(obj, content):
 
 
 class Notebook(object):
-    def __init__(self, s):
-        self._notebook = nbformat.reads_json(s)
-        if len(self._notebook.worksheets) == 0:
-             # probably have an empty notebook, create a worksheet
-            self._notebook.worksheets.append(nbformat.new_worksheet(cells = [nbformat.new_code_cell(input="")]))
-        self._cells = self._notebook.worksheets[0].cells
+    def __init__(self, s, path):
+        data = json.loads(s)["content"]
+        self._notebook = nbformat.to_notebook(data)
+        self._cells = self._notebook.cells
         self.notebook_view = None
+        self.path = path
 
     def __str__(self):
         return nbformat.writes_json(self._notebook)
@@ -130,9 +131,10 @@ class Notebook(object):
         doc = "The name property."
 
         def fget(self):
-            return self._notebook.metadata.name
+            return self.path # elf._notebook.metadata.name
         def fset(self, value):
-            self._notebook.metadata.name = value
+            pass
+            #self._notebook.metadata.name = value
         return locals()
     name = property(**name())
 
@@ -154,16 +156,10 @@ class Cell(object):
         doc = "The source property."
 
         def fget(self):
-            if self.cell_type == "code":
-                return "".join(self._cell.input)
-            else:
-                return "".join(self._cell.source)
+            return "".join(self._cell.source)
 
         def fset(self, value):
-            if self.cell_type == "code":
-                self._cell.input = value
-            else:
-                self._cell.source = value
+            self._cell.source = value
         return locals()
     source = property(**source())
 
@@ -248,7 +244,7 @@ class Kernel(object):
         self.running = False
         self.message_queue = queue.Queue()
         self.message_callbacks = dict()
-        self.start_kernel()
+        #self.start_kernel()
         _thread.start_new_thread(self.process_messages, ())
         self.status_callback = lambda x: None
         self.encoding = 'utf-8'
@@ -296,7 +292,11 @@ class Kernel(object):
         self.status_callback("closed")
 
     def get_notebook(self):
-        req = urlopen(self.notebook_url)
+        url = self.notebook_url
+        print("URL: " + url)
+        req = urlopen(url)
+        data = req.readall().decode(self.encoding)
+        return Notebook(data, self.notebook_id)
         try:
             return Notebook(req.readall().decode(self.encoding))
         except AttributeError:
@@ -304,7 +304,7 @@ class Kernel(object):
 
     @property
     def notebook_url(self):
-        return self.baseurl + "/notebooks/" + self.notebook_id
+        return self.baseurl + "/api/contents/" + self.notebook_id
 
     def save_notebook(self, notebook):
         request = Request(self.notebook_url, str(notebook).encode(self.encoding))

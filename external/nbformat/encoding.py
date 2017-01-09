@@ -15,6 +15,7 @@ Utilities for dealing with text encodings
 #-----------------------------------------------------------------------------
 import sys
 import locale
+import warnings
 
 # to deal with the possibility of sys.std* not being a stream at all
 def get_stream_enc(stream, default=None):
@@ -34,16 +35,20 @@ def get_stream_enc(stream, default=None):
 # to match the environment.
 # Defined here as central function, so if we find better choices, we
 # won't need to make changes all over IPython.
-def getdefaultencoding():
+def getdefaultencoding(prefer_stream=True):
     """Return IPython's guess for the default encoding for bytes as text.
-
-    Asks for stdin.encoding first, to match the calling Terminal, but that
-    is often None for subprocesses.  Fall back on locale.getpreferredencoding()
+    
+    If prefer_stream is True (default), asks for stdin.encoding first,
+    to match the calling Terminal, but that is often None for subprocesses.
+    
+    Then fall back on locale.getpreferredencoding(),
     which should be a sensible platform default (that respects LANG environment),
     and finally to sys.getdefaultencoding() which is the most conservative option,
-    and usually ASCII.
+    and usually ASCII on Python 2 or UTF8 on Python 3.
     """
-    enc = get_stream_enc(sys.stdin)
+    enc = None
+    if prefer_stream:
+        enc = get_stream_enc(sys.stdin)
     if not enc or enc=='ascii':
         try:
             # There are reports of getpreferredencoding raising errors
@@ -51,6 +56,16 @@ def getdefaultencoding():
             enc = locale.getpreferredencoding()
         except Exception:
             pass
-    return enc or sys.getdefaultencoding()
+    enc = enc or sys.getdefaultencoding()
+    # On windows `cp0` can be returned to indicate that there is no code page.
+    # Since cp0 is an invalid encoding return instead cp1252 which is the
+    # Western European default.
+    if enc == 'cp0':
+        warnings.warn(
+            "Invalid code page cp0 detected - using cp1252 instead."
+            "If cp1252 is incorrect please ensure a valid code page "
+            "is defined for the process.", RuntimeWarning)
+        return 'cp1252'
+    return enc
 
 DEFAULT_ENCODING = getdefaultencoding()

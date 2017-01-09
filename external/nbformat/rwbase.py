@@ -1,158 +1,103 @@
-"""Base classes and utilities for readers and writers.
+"""Base classes and utilities for readers and writers."""
 
-Authors:
+# Copyright (c) IPython Development Team.
+# Distributed under the terms of the Modified BSD License.
 
-* Brian Granger
-"""
+from .py3compat import string_types, cast_unicode_py2
 
-#-----------------------------------------------------------------------------
-#  Copyright (C) 2008-2011  The IPython Development Team
-#
-#  Distributed under the terms of the BSD License.  The full license is in
-#  the file COPYING, distributed as part of this software.
-#-----------------------------------------------------------------------------
+def _is_json_mime(mime):
+    """Is a key a JSON mime-type that should be left alone?"""
+    return mime == 'application/json' or \
+        (mime.startswith('application/') and mime.endswith('+json'))
 
-#-----------------------------------------------------------------------------
-# Imports
-#-----------------------------------------------------------------------------
-
-from base64 import encodestring, decodestring
-import pprint
-
-from . import py3compat
-
-str_to_bytes = py3compat.str_to_bytes
-
-#-----------------------------------------------------------------------------
-# Code
-#-----------------------------------------------------------------------------
-
-def restore_bytes(nb):
-    """Restore bytes of image data from unicode-only formats.
-    
-    Base64 encoding is handled elsewhere.  Bytes objects in the notebook are
-    always b64-encoded. We DO NOT encode/decode around file formats.
-    """
-    for ws in nb.worksheets:
-        for cell in ws.cells:
-            if cell.cell_type == 'code':
-                for output in cell.outputs:
-                    if 'png' in output:
-                        output.png = str_to_bytes(output.png, 'ascii')
-                    if 'jpeg' in output:
-                        output.jpeg = str_to_bytes(output.jpeg, 'ascii')
-    return nb
-
-# output keys that are likely to have multiline values
-_multiline_outputs = ['text', 'html', 'svg', 'latex', 'javascript', 'json']
-
-
-# FIXME: workaround for old splitlines()
-def _join_lines(lines):
-    """join lines that have been written by splitlines()
-    
-    Has logic to protect against `splitlines()`, which
-    should have been `splitlines(True)`
-    """
-    if lines and lines[0].endswith(('\n', '\r')):
-        # created by splitlines(True)
-        return u''.join(lines)
-    else:
-        # created by splitlines()
-        return u'\n'.join(lines)
-
+def _rejoin_mimebundle(data):
+    """Rejoin the multi-line string fields in a mimebundle (in-place)"""
+    for key, value in list(data.items()):
+        if not _is_json_mime(key) \
+        and isinstance(value, list) \
+        and all(isinstance(line, string_types) for line in value):
+            data[key] = ''.join(value)
+    return data
 
 def rejoin_lines(nb):
     """rejoin multiline text into strings
-    
+
     For reversing effects of ``split_lines(nb)``.
-    
+
     This only rejoins lines that have been split, so if text objects were not split
     they will pass through unchanged.
-    
+
     Used when reading JSON files that may have been passed through split_lines.
     """
-    for ws in nb.worksheets:
-        for cell in ws.cells:
-            if cell.cell_type == 'code':
-                if 'input' in cell and isinstance(cell.input, list):
-                    cell.input = _join_lines(cell.input)
-                for output in cell.outputs:
-                    for key in _multiline_outputs:
-                        item = output.get(key, None)
-                        if isinstance(item, list):
-                            output[key] = _join_lines(item)
-            else: # text, heading cell
-                for key in ['source', 'rendered']:
-                    item = cell.get(key, None)
-                    if isinstance(item, list):
-                        cell[key] = _join_lines(item)
+    for cell in nb.cells:
+        if 'source' in cell and isinstance(cell.source, list):
+            cell.source = ''.join(cell.source)
+
+        attachments = cell.get('attachments', {})
+        for key, attachment in attachments.items():
+            _rejoin_mimebundle(attachment)
+
+        if cell.get('cell_type', None) == 'code':
+            for output in cell.get('outputs', []):
+                output_type = output.get('output_type', '')
+                if output_type in {'execute_result', 'display_data'}:
+                    _rejoin_mimebundle(output.get('data', {}))
+                elif output_type:
+                    if isinstance(output.get('text', ''), list):
+                        output.text = ''.join(output.text)
     return nb
 
+_non_text_split_mimes = {
+    'application/javascript',
+    'image/svg+xml',
+}
+
+def _split_mimebundle(data):
+    """Split multi-line string fields in a mimebundle (in-place)"""
+    for key, value in list(data.items()):
+        if isinstance(value, string_types) and (
+            key.startswith('text/') or key in _non_text_split_mimes
+        ):
+            data[key] = value.splitlines(True)
+    return data
 
 def split_lines(nb):
     """split likely multiline text into lists of strings
-    
+
     For file output more friendly to line-based VCS. ``rejoin_lines(nb)`` will
     reverse the effects of ``split_lines(nb)``.
-    
+
     Used when writing JSON files.
     """
-    for ws in nb.worksheets:
-        for cell in ws.cells:
-            if cell.cell_type == 'code':
-                if 'input' in cell and isinstance(cell.input, basestring):
-                    cell.input = cell.input.splitlines(True)
-                for output in cell.outputs:
-                    for key in _multiline_outputs:
-                        item = output.get(key, None)
-                        if isinstance(item, basestring):
-                            output[key] = item.splitlines(True)
-            else: # text, heading cell
-                for key in ['source', 'rendered']:
-                    item = cell.get(key, None)
-                    if isinstance(item, basestring):
-                        cell[key] = item.splitlines(True)
-    return nb
+    for cell in nb.cells:
+        source = cell.get('source', None)
+        if isinstance(source, string_types):
+            cell['source'] = source.splitlines(True)
 
-# b64 encode/decode are never actually used, because all bytes objects in
-# the notebook are already b64-encoded, and we don't need/want to double-encode
+        attachments = cell.get('attachments', {})
+        for key, attachment in attachments.items():
+            _split_mimebundle(attachment)
 
-def base64_decode(nb):
-    """Restore all bytes objects in the notebook from base64-encoded strings.
-    
-    Note: This is never used
-    """
-    for ws in nb.worksheets:
-        for cell in ws.cells:
-            if cell.cell_type == 'code':
-                for output in cell.outputs:
-                    if 'png' in output:
-                        if isinstance(output.png, unicode):
-                            output.png = output.png.encode('ascii')
-                        output.png = decodestring(output.png)
-                    if 'jpeg' in output:
-                        if isinstance(output.jpeg, unicode):
-                            output.jpeg = output.jpeg.encode('ascii')
-                        output.jpeg = decodestring(output.jpeg)
+        if cell.cell_type == 'code':
+            for output in cell.outputs:
+                if output.output_type in {'execute_result', 'display_data'}:
+                    _split_mimebundle(output.get('data', {}))
+                elif output.output_type == 'stream':
+                    if isinstance(output.text, string_types):
+                        output.text = output.text.splitlines(True)
     return nb
 
 
-def base64_encode(nb):
-    """Base64 encode all bytes objects in the notebook.
-    
-    These will be b64-encoded unicode strings
-    
-    Note: This is never used
+def strip_transient(nb):
+    """Strip transient values that shouldn't be stored in files.
+
+    This should be called in *both* read and write.
     """
-    for ws in nb.worksheets:
-        for cell in ws.cells:
-            if cell.cell_type == 'code':
-                for output in cell.outputs:
-                    if 'png' in output:
-                        output.png = encodestring(output.png).decode('ascii')
-                    if 'jpeg' in output:
-                        output.jpeg = encodestring(output.jpeg).decode('ascii')
+    nb.metadata.pop('orig_nbformat', None)
+    nb.metadata.pop('orig_nbformat_minor', None)
+    nb.metadata.pop('signature', None)
+    for cell in nb.cells:
+        cell.metadata.pop('trusted', None)
     return nb
 
 
@@ -165,9 +110,7 @@ class NotebookReader(object):
 
     def read(self, fp, **kwargs):
         """Read a notebook from a file like object"""
-        nbs = fp.read()
-        if not py3compat.PY3 and not isinstance(nbs, unicode):
-            nbs = py3compat.str_to_unicode(nbs)
+        nbs = cast_unicode_py2(fp.read())
         return self.reads(nbs, **kwargs)
 
 
@@ -180,11 +123,5 @@ class NotebookWriter(object):
 
     def write(self, nb, fp, **kwargs):
         """Write a notebook to a file like object"""
-        nbs = self.writes(nb,**kwargs)
-        if not py3compat.PY3 and not isinstance(nbs, unicode):
-            # this branch is likely only taken for JSON on Python 2
-            nbs = py3compat.str_to_unicode(nbs)
+        nbs = cast_unicode_py2(self.writes(nb, **kwargs))
         return fp.write(nbs)
-
-
-

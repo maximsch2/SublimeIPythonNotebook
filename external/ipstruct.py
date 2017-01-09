@@ -1,28 +1,13 @@
 # encoding: utf-8
 """A dict subclass that supports attribute style access.
 
-Authors:
-
-* Fernando Perez (original)
-* Brian Granger (refactoring to a dict subclass)
+Can probably be replaced by types.SimpleNamespace from Python 3.3
 """
 
-#-----------------------------------------------------------------------------
-#  Copyright (C) 2008-2011  The IPython Development Team
-#
-#  Distributed under the terms of the BSD License.  The full license is in
-#  the file COPYING, distributed as part of this software.
-#-----------------------------------------------------------------------------
-
-#-----------------------------------------------------------------------------
-# Imports
-#-----------------------------------------------------------------------------
+# Copyright (c) IPython Development Team.
+# Distributed under the terms of the Modified BSD License.
 
 __all__ = ['Struct']
-
-#-----------------------------------------------------------------------------
-# Code
-#-----------------------------------------------------------------------------
 
 
 class Struct(dict):
@@ -78,7 +63,7 @@ class Struct(dict):
         >>> try:
         ...     s['b'] = 20
         ... except KeyError:
-        ...     print 'this is not allowed'
+        ...     print('this is not allowed')
         ...
         this is not allowed
         """
@@ -103,7 +88,7 @@ class Struct(dict):
         >>> try:
         ...     s.get = 10
         ... except AttributeError:
-        ...     print "you can't set a class member"
+        ...     print("you can't set a class member")
         ...
         you can't set a class member
         """
@@ -139,7 +124,7 @@ class Struct(dict):
         >>> try:
         ...     s.b
         ... except AttributeError:
-        ...     print "I don't have that key"
+        ...     print("I don't have that key")
         ...
         I don't have that key
         """
@@ -209,7 +194,7 @@ class Struct(dict):
         >>> s1
         {'b': 30}
         """
-        for k in list(other.keys()):
+        for k in other.keys():
             if k in self:
                 del self[k]
         return self
@@ -221,7 +206,7 @@ class Struct(dict):
         the elements of each list as keys and the original keys as values.
         """
         outdict = {}
-        for k,lst in list(data.items()):
+        for k,lst in data.items():
             if isinstance(lst, str):
                 lst = lst.split()
             for entry in lst:
@@ -379,7 +364,7 @@ class Struct(dict):
             for name, func in [('preserve',preserve), ('update',update),
                                ('add',add), ('add_flip',add_flip),
                                ('add_s',add_s)]:
-                if name in list(inv_conflict_solve_user.keys()):
+                if name in inv_conflict_solve_user.keys():
                     inv_conflict_solve_user[func] = inv_conflict_solve_user[name]
                     del inv_conflict_solve_user[name]
             conflict_solve.update(self.__dict_invert(inv_conflict_solve_user))
